@@ -1,5 +1,6 @@
 import PySimpleGUI as sg
-
+from cryptography.fernet import Fernet
+import os.path
 sg.theme('DarkGrey6')   # Add a touch of color
 
 """
@@ -22,7 +23,6 @@ EDIT_BUTTON = 'Edit'
 EXIT_BUTTON = 'Exit'
 NAMES_COMBOBOX = 'Names'
 INPUT_SIZE = 15
-
 
 def selectedTemplateWindow():
     layout = [[sg.Text('Recipient', font=textFont), sg.Input(size=INPUT_SIZE*2, font=textFont)],
@@ -85,4 +85,22 @@ def mainWindow():
     window.close()
 
 if __name__ == "__main__":
+    
+    TEMPLATES_PATH = 'templates.txt'
+    data = ''
+    
+    if (os.path.isfile(TEMPLATES_PATH)):
+        with open(TEMPLATES_PATH, 'r') as f:
+            data = f.read()
+            
+    print(data)
+    
+    key = Fernet.generate_key()
+    f = Fernet(key)
+    token = f.encrypt(data.encode())
+    print(token)
+    token = f.decrypt(token)
+    print(token)
+            
+    
     mainWindow()
