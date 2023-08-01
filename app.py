@@ -26,17 +26,28 @@ INPUT_SIZE = 15
 NEW_BUTTON = 'New Template'
 SAVE_BUTTON = 'Save & Close'
 
-def selectedTemplateWindow():
-    layout = [[sg.Text('Recipient', font=textFont), sg.Input(size=INPUT_SIZE*2, font=textFont, key=('Recipient'))],
+def selectedTemplateWindow(isNewTemplate, name):
+    with open(TEMPLATES_PATH, 'r') as f:
+        jsonData = json.load(f)
+    
+    if (isNewTemplate):
+        layout = [[sg.Text('Recipient', font=textFont), sg.Input(size=INPUT_SIZE*2, font=textFont, key=('Recipient'))],
               [sg.Text('Number of lessons', font=textFont), sg.Input(size=INPUT_SIZE, font=textFont, key=('Number'))],
               [sg.Text('Cost of lesson  £', font=textFont), sg.Input(size=INPUT_SIZE, font=textFont, key=('Cost'))], 
               [sg.VPush()],
               [sg.Button(SAVE_BUTTON, font=textFont), sg.Push(), sg.Button(EXIT_BUTTON, font=textFont)]
               ]
+    else:
+        layout = [[sg.Text('Recipient', font=textFont), sg.Input(size=INPUT_SIZE*2, font=textFont, key=('Recipient'), disabled=True, default_text=name)],
+              [sg.Text('Number of lessons', font=textFont), sg.Input(size=INPUT_SIZE, font=textFont, key=('Number'), default_text=jsonData[name]['Number'])],
+              [sg.Text('Cost of lesson  £', font=textFont), sg.Input(size=INPUT_SIZE, font=textFont, key=('Cost'), default_text=jsonData[name]['Cost'])], 
+              [sg.VPush()],
+              [sg.Button(SAVE_BUTTON, font=textFont), sg.Push(), sg.Button(EXIT_BUTTON, font=textFont)]
+              ] 
+    
     sg.Titlebar()
     
     window = sg.Window('', layout, element_justification='c', size=(300, 160), modal=True, disable_close=True, icon='res\Blank.ico')
-    
     
     while True:
         event, values = window.read()
@@ -49,23 +60,33 @@ def selectedTemplateWindow():
                 sg.popup('Number of lessons cannot contain characters!', title='', font=textFont, icon='res\Blank.ico')
             elif re.search('\D', str(values['Cost']).replace('.', '')):
                 sg.popup('Cost of lesson cannot contain characters!', title='', font=textFont, icon='res\Blank.ico')
-            elif (len(str(values['Recipient'])) or len(str(values['Number'])) or len(str(values['Cost']))) == 0:
+            elif len(str(values['Recipient'])) == 0 or len(str(values['Number'])) == 0 or len(str(values['Cost'])) == 0:
                 sg.popup('All fields must be completed!', title='', font=textFont, icon='res\Blank.ico')
             else:
-                with open(TEMPLATES_PATH, 'r') as f:
-                    jsonData = json.load(f)
-                    print(jsonData[0])
-                    data = ''
-                    data = data + values['Recipient']
-                    data = data + values['Number']  
-                    data = data + '%.2f' % int(values['Cost'])
-                    print(data)
-                break
-        
-    
+                name = values['Recipient']
+                
+                if (name in jsonData) and (isNewTemplate == True):
+                    sg.popup('Template with that name already exists!', title='', font=textFont, icon='res\Blank.ico')
+                else:
+                    info = {
+                        'Number' : values['Number'],
+                        'Cost' : '%.2f' % (round(float(values['Cost']), 2))
+                    }
+                    
+                    jsonData[name] = info
+
+                    with open(TEMPLATES_PATH, 'w') as f:
+                        f.write(json.dumps(jsonData))
+                    
+                    break
+    f.close();  
     window.close()
 
 def mainWindow():
+    with open(TEMPLATES_PATH, 'r') as f:
+        jsonData = json.load(f)
+        namesList = list(jsonData.keys())
+    
     supportButtons = [
                         [sg.Button(NEW_BUTTON, font=textFont), 
                         sg.Button('Settings', font=textFont),
@@ -76,7 +97,7 @@ def mainWindow():
             [
                 [
                 sg.Text('Templates', font=titleFont, pad=PADDING),
-                sg.Combo('', enable_events=True, default_value="", pad=PADDING, key=NAMES_COMBOBOX, size=15, font=textFont, readonly=True),
+                sg.Combo(namesList, enable_events=True, default_value="", pad=PADDING, key=NAMES_COMBOBOX, size=15, font=textFont, readonly=True),
                 sg.Button(EDIT_BUTTON, font=textFont, disabled=True),
                 sg.Button('Subject', font=textFont),
                 sg.Button('Body', font=textFont)
@@ -98,22 +119,23 @@ def mainWindow():
             if (not values[NAMES_COMBOBOX] == ''):
                 window[EDIT_BUTTON].update(disabled=False)
         if event == EDIT_BUTTON:
-            selectedTemplateWindow()
+            selectedTemplateWindow(False, values[NAMES_COMBOBOX])
         if event == NEW_BUTTON:
-            selectedTemplateWindow()
+            selectedTemplateWindow(True, '')
+            
+            with open(TEMPLATES_PATH, 'r') as f:
+                jsonData = json.load(f)
+                namesList = list(jsonData.keys())
+                
+            window[NAMES_COMBOBOX].update(values=namesList)
 
     window.close()
 
 if __name__ == "__main__":
     
     TEMPLATES_PATH = 'templates.json'
-    data = ''
     
-    if (os.path.isfile(TEMPLATES_PATH)):
-        with open(TEMPLATES_PATH, 'r') as f:
-            data = f.read()
-            f.close()
-    else:
+    if (not os.path.isfile(TEMPLATES_PATH)):
         f = open(TEMPLATES_PATH, 'w')
 
     sg.theme('DarkAmber')
