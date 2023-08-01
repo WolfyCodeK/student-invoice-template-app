@@ -1,0 +1,12 @@
+[
+    {
+        "Recipient" : "Jane",
+        "NumberOfLessons" : 7,
+        "CostOfLesson" : 45.25
+    },
+    {
+        "Recipient" : "Test",
+        "NumberOfLessons" : 3,
+        "CostOfLesson" : 67.32 
+    }
+]

@@ -1,7 +1,7 @@
 import PySimpleGUI as sg
-from cryptography.fernet import Fernet
 import os.path
-sg.theme('DarkGrey6')   # Add a touch of color
+import json
+import re
 
 """
     [sg.Text('Enter student name'), sg.InputText()],
@@ -23,33 +23,51 @@ EDIT_BUTTON = 'Edit'
 EXIT_BUTTON = 'Exit'
 NAMES_COMBOBOX = 'Names'
 INPUT_SIZE = 15
+NEW_BUTTON = 'New Template'
+SAVE_BUTTON = 'Save & Close'
 
 def selectedTemplateWindow():
-    layout = [[sg.Text('Recipient', font=textFont), sg.Input(size=INPUT_SIZE*2, font=textFont)],
-              [sg.Text('Number of lessons', font=textFont), sg.Input(size=INPUT_SIZE, font=textFont)],
-              [sg.Text('Cost of lesson  £', font=textFont), sg.Input(size=INPUT_SIZE, font=textFont)], 
+    layout = [[sg.Text('Recipient', font=textFont), sg.Input(size=INPUT_SIZE*2, font=textFont, key=('Recipient'))],
+              [sg.Text('Number of lessons', font=textFont), sg.Input(size=INPUT_SIZE, font=textFont, key=('Number'))],
+              [sg.Text('Cost of lesson  £', font=textFont), sg.Input(size=INPUT_SIZE, font=textFont, key=('Cost'))], 
               [sg.VPush()],
-              [sg.Button('Save & Close', font=textFont), sg.Push(), sg.Button(EXIT_BUTTON, font=textFont)]
+              [sg.Button(SAVE_BUTTON, font=textFont), sg.Push(), sg.Button(EXIT_BUTTON, font=textFont)]
               ]
     sg.Titlebar()
     
-    window = sg.Window('', layout, element_justification='c', size=(400, 225), modal=True,
-            use_custom_titlebar=True, disable_close=True)
+    window = sg.Window('', layout, element_justification='c', size=(300, 160), modal=True, disable_close=True, icon='res\Blank.ico')
+    
     
     while True:
         event, values = window.read()
         if event == EXIT_BUTTON:
             break
-        if event == 'Save & Close':
-            print('test')
-            break
+        if event == SAVE_BUTTON: 
+            if re.search('\d', values['Recipient']):
+                sg.popup('Recipient name cannot contain numbers!', title='', font=textFont, icon='res\Blank.ico')
+            elif re.search('\D', values['Number']):
+                sg.popup('Number of lessons cannot contain characters!', title='', font=textFont, icon='res\Blank.ico')
+            elif re.search('\D', str(values['Cost']).replace('.', '')):
+                sg.popup('Cost of lesson cannot contain characters!', title='', font=textFont, icon='res\Blank.ico')
+            elif (len(str(values['Recipient'])) or len(str(values['Number'])) or len(str(values['Cost']))) == 0:
+                sg.popup('All fields must be completed!', title='', font=textFont, icon='res\Blank.ico')
+            else:
+                with open(TEMPLATES_PATH, 'r') as f:
+                    jsonData = json.load(f)
+                    print(jsonData[0])
+                    data = ''
+                    data = data + values['Recipient']
+                    data = data + values['Number']  
+                    data = data + '%.2f' % int(values['Cost'])
+                    print(data)
+                break
         
     
     window.close()
 
 def mainWindow():
     supportButtons = [
-                        [sg.Button('New Template', font=textFont), 
+                        [sg.Button(NEW_BUTTON, font=textFont), 
                         sg.Button('Settings', font=textFont),
                         sg.Button(EXIT_BUTTON, font=textFont)]       
                     ]
@@ -58,22 +76,22 @@ def mainWindow():
             [
                 [
                 sg.Text('Templates', font=titleFont, pad=PADDING),
-                sg.Combo('Jane', enable_events=True, default_value="", key=NAMES_COMBOBOX, size=15, font=textFont, readonly=True),
-                sg.Button(EDIT_BUTTON, font=textFont, pad=PADDING, disabled=True)],
-                sg.VPush()
-                ],
-                    
-                    [sg.Column(supportButtons, element_justification='right',expand_x=True)]
+                sg.Combo('', enable_events=True, default_value="", pad=PADDING, key=NAMES_COMBOBOX, size=15, font=textFont, readonly=True),
+                sg.Button(EDIT_BUTTON, font=textFont, disabled=True),
+                sg.Button('Subject', font=textFont),
+                sg.Button('Body', font=textFont)
+                ]],
+                [sg.VPush()],
+                [sg.Column(supportButtons, element_justification='right',expand_x=True)]
                 
                 
             ]
 
-    # Create the Window
-    window = sg.Window('Invoice Templates', layout, element_justification='l', size=(600, 225))
+    window = sg.Window('Invoice Templates', layout, element_justification='l', size=(600, 225), icon='res\Moneybox.ico')
+    
     # Event Loop to process "events" and get the "values" of the inputs
     while True:
         event, values = window.read()
-        
         if event == sg.WIN_CLOSED or event == EXIT_BUTTON: # if user closes window or clicks cancel
             break
         if event == NAMES_COMBOBOX:
@@ -81,26 +99,25 @@ def mainWindow():
                 window[EDIT_BUTTON].update(disabled=False)
         if event == EDIT_BUTTON:
             selectedTemplateWindow()
+        if event == NEW_BUTTON:
+            selectedTemplateWindow()
 
     window.close()
 
 if __name__ == "__main__":
     
-    TEMPLATES_PATH = 'templates.txt'
+    TEMPLATES_PATH = 'templates.json'
     data = ''
     
     if (os.path.isfile(TEMPLATES_PATH)):
         with open(TEMPLATES_PATH, 'r') as f:
             data = f.read()
-            
-    print(data)
-    
-    key = Fernet.generate_key()
-    f = Fernet(key)
-    token = f.encrypt(data.encode())
-    print(token)
-    token = f.decrypt(token)
-    print(token)
-            
-    
+            f.close()
+    else:
+        f = open(TEMPLATES_PATH, 'w')
+
+    sg.theme('DarkAmber')
+
     mainWindow()
+    
+    
