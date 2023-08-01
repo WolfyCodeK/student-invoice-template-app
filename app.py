@@ -2,6 +2,7 @@ import PySimpleGUI as sg
 import os.path
 import json
 import re
+import pyperclip
 
 """
     [sg.Text('Enter student name'), sg.InputText()],
@@ -38,7 +39,7 @@ def selectedTemplateWindow(isNewTemplate, name):
               [sg.Button(SAVE_BUTTON, font=textFont), sg.Push(), sg.Button(EXIT_BUTTON, font=textFont)]
               ]
     else:
-        layout = [[sg.Text('Recipient', font=textFont), sg.Input(size=INPUT_SIZE*2, font=textFont, key=('Recipient'), disabled=True, default_text=name)],
+        layout = [[sg.Text('Recipient', font=textFont), sg.Input(size=INPUT_SIZE*2, font=textFont, key=('Recipient'), disabled=True, default_text=name, disabled_readonly_background_color='DarkRed')],
               [sg.Text('Number of lessons', font=textFont), sg.Input(size=INPUT_SIZE, font=textFont, key=('Number'), default_text=jsonData[name]['Number'])],
               [sg.Text('Cost of lesson  £', font=textFont), sg.Input(size=INPUT_SIZE, font=textFont, key=('Cost'), default_text=jsonData[name]['Cost'])], 
               [sg.VPush()],
@@ -99,8 +100,8 @@ def mainWindow():
                 sg.Text('Templates', font=titleFont, pad=PADDING),
                 sg.Combo(namesList, enable_events=True, default_value="", pad=PADDING, key=NAMES_COMBOBOX, size=15, font=textFont, readonly=True),
                 sg.Button(EDIT_BUTTON, font=textFont, disabled=True),
-                sg.Button('Subject', font=textFont),
-                sg.Button('Body', font=textFont)
+                sg.Button('Subject', font=textFont, disabled=True),
+                sg.Button('Body', font=textFont, disabled=True)
                 ]],
                 [sg.VPush()],
                 [sg.Column(supportButtons, element_justification='right',expand_x=True)]
@@ -117,17 +118,46 @@ def mainWindow():
             break
         if event == NAMES_COMBOBOX:
             if (not values[NAMES_COMBOBOX] == ''):
+                
                 window[EDIT_BUTTON].update(disabled=False)
+                window['Subject'].update(disabled=False)
+                window['Body'].update(disabled=False)
+                
         if event == EDIT_BUTTON:
             selectedTemplateWindow(False, values[NAMES_COMBOBOX])
         if event == NEW_BUTTON:
             selectedTemplateWindow(True, '')
+            
+            window[EDIT_BUTTON].update(disabled=True)
+            window['Subject'].update(disabled=True)
+            window['Body'].update(disabled=True)
             
             with open(TEMPLATES_PATH, 'r') as f:
                 jsonData = json.load(f)
                 namesList = list(jsonData.keys())
                 
             window[NAMES_COMBOBOX].update(values=namesList)
+        if event == 'Subject':
+            print(jsonData[values[NAMES_COMBOBOX]]['Number'])
+        if event == 'Body':
+            numberOfLessons = str(jsonData[values[NAMES_COMBOBOX]]['Number'])
+            costOfLessons = str(jsonData[values[NAMES_COMBOBOX]]['Cost'])
+            totalCost = str(int(numberOfLessons) * float(costOfLessons))
+            pyperclip.copy("""Hi Jane,
+
+Here is my invoice for Melody's drum lessons 2nd half summer term 2023.
+--------
+There are """ + numberOfLessons + """ sessions this 2nd half summer term from Tuesday 6th June to and including Tuesday 18th July.
+ 
+""" + numberOfLessons + """ x £ """ + costOfLessons + """ = £ """ + totalCost + """
+
+Thank you
+--------
+
+Kind regards""")
+        if event == 'Settings':
+            sg.popup('Work in progress')
+            
 
     window.close()
 
