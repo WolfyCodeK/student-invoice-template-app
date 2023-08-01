@@ -143,7 +143,7 @@ def mainWindow():
             numberOfLessons = str(jsonData[values[NAMES_COMBOBOX]]['Number'])
             costOfLessons = str(jsonData[values[NAMES_COMBOBOX]]['Cost'])
             totalCost = str(int(numberOfLessons) * float(costOfLessons))
-            pyperclip.copy("""Hi Jane,
+            pyperclip.copy("""Hi """ + str(values[NAMES_COMBOBOX]) +  """,
 
 Here is my invoice for Melody's drum lessons 2nd half summer term 2023.
 --------
