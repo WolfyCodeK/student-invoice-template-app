@@ -3,21 +3,26 @@ import os.path
 import json
 import re
 import pyperclip
-from datetime import date
+import datetime
 from configparser import ConfigParser
 
 # Theme List
 themeList = ['Black', 'BlueMono', 'BluePurple', 'BrightColors', 'BrownBlue', 'Dark', 'Dark2', 'DarkAmber', 'DarkBlack', 'DarkBlack1', 'DarkBlue', 'DarkBlue1', 'DarkBlue10', 'DarkBlue11', 'DarkBlue12', 'DarkBlue13', 'DarkBlue14', 'DarkBlue15', 'DarkBlue16', 'DarkBlue17', 'DarkBlue2', 'DarkBlue3', 'DarkBlue4', 'DarkBlue5', 'DarkBlue6', 'DarkBlue7', 'DarkBlue8', 'DarkBlue9', 'DarkBrown', 'DarkBrown1', 'DarkBrown2', 'DarkBrown3', 'DarkBrown4', 'DarkBrown5', 'DarkBrown6', 'DarkGreen', 'DarkGreen1', 'DarkGreen2', 'DarkGreen3', 'DarkGreen4', 'DarkGreen5', 'DarkGreen6', 'DarkGrey', 'DarkGrey1', 'DarkGrey2', 'DarkGrey3', 'DarkGrey4', 'DarkGrey5', 'DarkGrey6', 'DarkGrey7', 'DarkPurple', 'DarkPurple1', 'DarkPurple2', 'DarkPurple3', 'DarkPurple4', 'DarkPurple5', 'DarkPurple6', 'DarkRed', 'DarkRed1', 'DarkRed2', 'DarkTanBlue', 'DarkTeal', 'DarkTeal1', 'DarkTeal10', 'DarkTeal11', 'DarkTeal12', 'DarkTeal2', 'DarkTeal3', 'DarkTeal4', 'DarkTeal5', 'DarkTeal6', 'DarkTeal7', 'DarkTeal8', 'DarkTeal9', 'Default', 'Default1', 'DefaultNoMoreNagging', 'Green', 'GreenMono', 'GreenTan', 'HotDogStand', 'Kayak', 'LightBlue', 'LightBlue1', 'LightBlue2', 'LightBlue3', 'LightBlue4', 'LightBlue5', 'LightBlue6', 'LightBlue7', 'LightBrown', 'LightBrown1', 'LightBrown10', 'LightBrown11', 'LightBrown12', 'LightBrown13', 'LightBrown2', 'LightBrown3', 'LightBrown4', 'LightBrown5', 'LightBrown6', 'LightBrown7', 'LightBrown8', 'LightBrown9', 'LightGray1', 'LightGreen', 'LightGreen1', 'LightGreen10', 'LightGreen2', 'LightGreen3', 'LightGreen4', 'LightGreen5', 'LightGreen6', 'LightGreen7', 'LightGreen8', 'LightGreen9', 'LightGrey', 'LightGrey1', 'LightGrey2', 'LightGrey3', 'LightGrey4', 'LightGrey5', 'LightGrey6', 'LightPurple', 'LightTeal', 'LightYellow', 'Material1', 'Material2', 'NeutralBlue', 'Purple', 'Reddit', 'Reds', 'SandyBeach', 'SystemDefault', 'SystemDefault1', 'SystemDefaultForReal', 'Tan', 'TanBlue', 'TealMono', 'Topanga']
 
 # Term Dates
-autumn1 = [date(2023, 9, 4), date(2023, 10, 21)]
-autumn2 = [date(2023, 9, 30), date(2023, 12, 23)]
+today = datetime.datetime.now()
 
-spring1 = [date(2024, 1, 8), date(2024, 2, 10)]
-spring2  = [date(2024, 2, 19), date(2024, 3, 30)]
+autumn1 = [datetime.datetime(2023, 9, 4), datetime.datetime(2023, 10, 21)]
+autumn2 = [datetime.datetime(2023, 9, 30), datetime.datetime(2023, 12, 23)]
 
-summer1 = [date(2024, 4, 15), date(2024, 5, 25)]
-summer2 = [date(2024, 5, 3), date(2024, 6, 24)]
+spring1 = [datetime.datetime(2024, 1, 8), datetime.datetime(2024, 2, 10)]
+spring2  = [datetime.datetime(2024, 2, 19), datetime.datetime(2024, 3, 30)]
+
+summer1 = [datetime.datetime(2024, 4, 15), datetime.datetime(2024, 5, 25)]
+summer2 = [datetime.datetime(2024, 5, 3), datetime.datetime(2024, 6, 24)]
+
+weekdays = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
+months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November','December']
 
 # Custom Fonts
 textFont = ('Space Mono', 12)
@@ -61,8 +66,44 @@ INPUT_SIZE = 15
 
 instrumentsList = ['piano', 'drum', 'guitar', 'vocal']
 
+def whichTerm(date):
+    print(date.year)
+    currentTerm = ''
+    if (date.year >= autumn1[0].year and date.year <= autumn1[1].year
+        and date.month >= autumn1[0].month and date.month <= autumn1[1].month
+        and date.day >= autumn1[0].day and date.day <= autumn1[1].day):
+        currentTerm = ['1st half autumn term 2023', '1st Half Autumn Term 2023', str(numToWeekday(autumn1[0].isoweekday())) + ' ' + str(autumn1[0].day) + 'th ' + str(numToMonth(autumn1[0].month)) + ' to and including ' + str(numToWeekday(autumn1[1].isoweekday())) + ' ' + str(autumn1[1].day) + 'th ' + str(numToMonth(autumn1[1].month)) + '.']
+    elif (date.year >= autumn2[0].year and date.year <= autumn2[1].year
+        and date.month >= autumn2[0].month and date.month <= autumn2[1].month
+        and date.day >= autumn2[0].day and date.day <= autumn2[1].day):
+        currentTerm = ['2nd half autumn term 2023', '2nd Half Autumn Term 2023', str(numToWeekday(autumn2[0].isoweekday())) + ' ' + str(autumn2[0].day) + 'th ' + str(numToMonth(autumn2[0].month)) + ' to and including ' + str(numToWeekday(autumn2[1].isoweekday())) + ' ' + str(autumn2[1].day) + 'th ' + str(numToMonth(autumn2[1].month)) + '.']
+    elif (date.year >= spring1[0].year and date.year <= spring1[1].year
+        and date.month >= spring1[0].month and date.month <= spring1[1].month
+        and date.day >= spring1[0].day and date.day <= spring1[1].day):
+        currentTerm = ['1st half spring term 2023', '1st Half Spring Term 2023', str(numToWeekday(autumn2[0].isoweekday())) + ' ' + str(spring1[0].day) + 'th ' + str(numToMonth(spring1[0].month)) + ' to and including ' + str(numToWeekday(spring1[1].isoweekday())) + ' ' + str(spring1[1].day) + 'th ' + str(numToMonth(autumn2[1].month)) + '.']
+    elif (date.year >= spring2[0].year and date.year <= spring2[1].year
+        and date.month >= spring2[0].month and date.month <= spring2[1].month
+        and date.day >= spring2[0].day and date.day <= spring2[1].day):
+        currentTerm = ['2nd half spring term 2023', '2nd Half Spring Term 2023', str(numToWeekday(autumn2[0].isoweekday())) + ' ' + str(spring2[0].day) + 'th ' + str(numToMonth(spring2[0].month)) + ' to and including ' + str(numToWeekday(spring2[1].isoweekday())) + ' ' + str(spring2[1].day) + 'th ' + str(numToMonth(autumn2[1].month)) + '.']
+    elif (date.year >= summer1[0].year and date.year <= summer1[1].year
+        and date.month >= summer1[0].month and date.month <= summer1[1].month
+        and date.day >= summer1[0].day and date.day <= summer1[1].day):
+        currentTerm = ['1st half summer term 2023', '1st Half Summer Term 2023', str(numToWeekday(autumn2[0].isoweekday())) + ' ' + str(summer1[0].day) + 'th ' + str(numToMonth(summer1[0].month)) + ' to and including ' + str(numToWeekday(summer1[1].isoweekday())) + ' ' + str(summer1[1].day) + 'th ' + str(numToMonth(autumn2[1].month)) + '.']
+    elif (date.year >= summer2[0].year and date.year <= summer2[1].year
+        and date.month >= summer2[0].month and date.month <= summer2[1].month
+        and date.day >= summer2[0].day and date.day <= summer2[1].day):
+        currentTerm = ['2nd half summer term 2023', '2nd Half Summer Term 2023', str(numToWeekday(autumn2[0].isoweekday())) + ' ' + str(summer2[0].day) + 'th ' + str(numToMonth(summer2[0].month)) + ' to and including ' + str(numToWeekday(summer2[1].isoweekday())) + ' ' + str(summer2[1].day) + 'th ' + str(numToMonth(autumn2[1].month)) + '.']    
+        
+    return currentTerm
+        
 def checkSelectFieldsAreNotEmpty(values):
     return len(str(values[RECIPIENT_INPUT])) == 0 or len(str(values[NUMBER_INPUT])) == 0 or len(str(values[COST_INPUT])) == 0 or len(str(values[INSTRUMENT_INPUT])) == 0 or len(str(values[STUDENT_INPUT])) == 0
+
+def numToWeekday(num):
+    return weekdays[num-1]
+
+def numToMonth(num):
+    return months[num-1]
 
 def settingsWindow():
     layout = [
@@ -194,8 +235,6 @@ def selectedTemplateWindow(isNewTemplate, name):
     window.close()
 
 def mainWindow():
-    today = date.today()
-    
     with open(TEMPLATES_PATH, 'r') as f:
         jsonData = json.load(f)
         namesList = list(jsonData.keys())
@@ -294,6 +333,10 @@ def mainWindow():
             totalCost = '%.2f' % (round(float(totalCost), 2))
             insturment = str(jsonData[values[NAMES_COMBOBOX]][INSTRUMENT_INPUT])
             students = str(jsonData[values[NAMES_COMBOBOX]][STUDENT_INPUT])
+            
+            testDate = datetime.datetime(2023, 9, 17)
+            print(whichTerm(testDate))
+            
             pyperclip.copy("""Hi """ + name +  """,
 
 Here is my invoice for """ + students + """'s """ + insturment + """ lessons 2nd half summer term """ + str(today.year) + """.
