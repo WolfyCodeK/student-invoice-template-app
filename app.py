@@ -79,7 +79,7 @@ def settingsWindow():
     # Event Loop
     while True:
         event, values = window.read()
-        if event == EXIT_BUTTON or sg.WIN_CLOSED:
+        if event == EXIT_BUTTON or event == sg.WIN_CLOSED:
             break
         if event == SAVE_BUTTON:
             config = ConfigParser()
@@ -150,7 +150,7 @@ def selectedTemplateWindow(isNewTemplate, name):
     # Event Loop
     while True:
         event, values = window.read()
-        if event == EXIT_BUTTON or sg.WIN_CLOSED:
+        if event == EXIT_BUTTON or event == sg.WIN_CLOSED:
             break
         if event == SAVE_BUTTON: 
             # Input error checking
@@ -182,7 +182,9 @@ def selectedTemplateWindow(isNewTemplate, name):
                     with open(TEMPLATES_PATH, 'w') as f:
                         f.write(json.dumps(jsonData))
                         f.close()
+                        
                     break
+            
     window.close()
 
 def mainWindow():
@@ -229,7 +231,7 @@ def mainWindow():
         print("hello")
         
         event, values = window.read()
-        if event == sg.WIN_CLOSED or event == EXIT_BUTTON: # if user closes window or clicks cancel
+        if event == sg.WIN_CLOSED or event == EXIT_BUTTON:
             break
         if event == NAMES_COMBOBOX:
             if (not values[NAMES_COMBOBOX] == ''):
