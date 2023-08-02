@@ -3,6 +3,11 @@ import os.path
 import json
 import re
 import pyperclip
+from datetime import date
+from configparser import ConfigParser
+
+# Theme List
+themeList = ['Black', 'BlueMono', 'BluePurple', 'BrightColors', 'BrownBlue', 'Dark', 'Dark2', 'DarkAmber', 'DarkBlack', 'DarkBlack1', 'DarkBlue', 'DarkBlue1', 'DarkBlue10', 'DarkBlue11', 'DarkBlue12', 'DarkBlue13', 'DarkBlue14', 'DarkBlue15', 'DarkBlue16', 'DarkBlue17', 'DarkBlue2', 'DarkBlue3', 'DarkBlue4', 'DarkBlue5', 'DarkBlue6', 'DarkBlue7', 'DarkBlue8', 'DarkBlue9', 'DarkBrown', 'DarkBrown1', 'DarkBrown2', 'DarkBrown3', 'DarkBrown4', 'DarkBrown5', 'DarkBrown6', 'DarkGreen', 'DarkGreen1', 'DarkGreen2', 'DarkGreen3', 'DarkGreen4', 'DarkGreen5', 'DarkGreen6', 'DarkGrey', 'DarkGrey1', 'DarkGrey2', 'DarkGrey3', 'DarkGrey4', 'DarkGrey5', 'DarkGrey6', 'DarkGrey7', 'DarkPurple', 'DarkPurple1', 'DarkPurple2', 'DarkPurple3', 'DarkPurple4', 'DarkPurple5', 'DarkPurple6', 'DarkRed', 'DarkRed1', 'DarkRed2', 'DarkTanBlue', 'DarkTeal', 'DarkTeal1', 'DarkTeal10', 'DarkTeal11', 'DarkTeal12', 'DarkTeal2', 'DarkTeal3', 'DarkTeal4', 'DarkTeal5', 'DarkTeal6', 'DarkTeal7', 'DarkTeal8', 'DarkTeal9', 'Default', 'Default1', 'DefaultNoMoreNagging', 'Green', 'GreenMono', 'GreenTan', 'HotDogStand', 'Kayak', 'LightBlue', 'LightBlue1', 'LightBlue2', 'LightBlue3', 'LightBlue4', 'LightBlue5', 'LightBlue6', 'LightBlue7', 'LightBrown', 'LightBrown1', 'LightBrown10', 'LightBrown11', 'LightBrown12', 'LightBrown13', 'LightBrown2', 'LightBrown3', 'LightBrown4', 'LightBrown5', 'LightBrown6', 'LightBrown7', 'LightBrown8', 'LightBrown9', 'LightGray1', 'LightGreen', 'LightGreen1', 'LightGreen10', 'LightGreen2', 'LightGreen3', 'LightGreen4', 'LightGreen5', 'LightGreen6', 'LightGreen7', 'LightGreen8', 'LightGreen9', 'LightGrey', 'LightGrey1', 'LightGrey2', 'LightGrey3', 'LightGrey4', 'LightGrey5', 'LightGrey6', 'LightPurple', 'LightTeal', 'LightYellow', 'Material1', 'Material2', 'NeutralBlue', 'Purple', 'Reddit', 'Reds', 'SandyBeach', 'SystemDefault', 'SystemDefault1', 'SystemDefaultForReal', 'Tan', 'TanBlue', 'TealMono', 'Topanga']
 
 # Custom Fonts
 titleFont = ("Courier New", 15)
@@ -10,6 +15,7 @@ textFont = ("Courier New", 12)
 
 # File Paths
 TEMPLATES_PATH = 'templates.json'
+SETTINGS_PATH = 'settings.ini'
 
 # Resource Paths
 BLANK_ICO = 'res\Blank.ico'
@@ -20,6 +26,8 @@ MAIN_WIDTH = 600
 MAIN_HEIGHT = 225
 SELECT_WIDTH = 300
 SELECT_HEIGHT = 275
+SETTINGS_WIDTH = 300
+SETTINGS_HEIGHT = 100
 
 # Element Sizes
 PADDING = 15
@@ -46,6 +54,31 @@ instrumentsList = ['Piano', 'Drum', 'Guitar', 'Vocal']
 def checkSelectFieldsAreNotEmpty(values):
     return len(str(values[RECIPIENT_INPUT])) == 0 or len(str(values[NUMBER_INPUT])) == 0 or len(str(values[COST_INPUT])) == 0 or len(str(values[INSTRUMENT_INPUT])) == 0 or len(str(values[STUDENT_INPUT])) == 0
 
+def settingsWindow():
+    THEME = 'THEME'
+    layout = [
+        [sg.Text(THEME, font=textFont), sg.Combo(themeList, font=textFont, size=INPUT_SIZE, readonly=True, key=THEME)],
+        [sg.VPush()],
+        [sg.Button(SAVE_BUTTON, font=textFont)]
+    ]
+    
+    window = sg.Window('', layout, element_justification='c', size=(SELECT_WIDTH, SETTINGS_HEIGHT), modal=True, icon=BLANK_ICO)
+    
+    while True:
+        event, values = window.read()
+        if event == sg.WIN_CLOSED:
+            break
+        if event == SAVE_BUTTON:
+            config = ConfigParser()
+            config.read(SETTINGS_PATH)
+            config.set('Preferences', 'theme', values[THEME])
+            
+            with open(SETTINGS_PATH, 'w') as configfile:
+                config.write(configfile)
+        break
+        
+    window.close()
+
 def selectedTemplateWindow(isNewTemplate, name):
     with open(TEMPLATES_PATH, 'r') as f:
         jsonData = json.load(f)
@@ -69,18 +102,18 @@ def selectedTemplateWindow(isNewTemplate, name):
             default_text=recipientDefault, disabled=recipientDisabled, disabled_readonly_background_color='DarkRed')],
             [sg.Text('Number of lessons', font=textFont), sg.Input(size=INPUT_SIZE, font=textFont, key=NUMBER_INPUT, default_text=numberDefault)],
             [sg.Text('Cost of lesson  £', font=textFont), sg.Input(size=INPUT_SIZE, font=textFont, key=COST_INPUT, default_text=costDefault)],
-            [sg.Text('Instrument', font=textFont), sg.InputCombo(values=sorted(instrumentsList), size=INPUT_SIZE, font=textFont, key=INSTRUMENT_INPUT, default_value=instrumentDefault)],
+            [sg.Text('Instrument', font=textFont), sg.Combo(values=sorted(instrumentsList), size=INPUT_SIZE, font=textFont, key=INSTRUMENT_INPUT, default_value=instrumentDefault, readonly=True)],
             [sg.Text('Student(s)', font=textFont)], 
             [sg.Multiline(size=(INPUT_SIZE*2, 3), font=textFont, key=STUDENT_INPUT, default_text=studentDefault)],
             [sg.VPush()],
             [sg.Button(SAVE_BUTTON, font=textFont), sg.Push(), sg.Button(EXIT_BUTTON, font=textFont)]
             ]
     
-    window = sg.Window('', layout, element_justification='c', size=(SELECT_WIDTH, SELECT_HEIGHT), modal=True, disable_close=True, icon=BLANK_ICO)
+    window = sg.Window('', layout, element_justification='c', size=(SELECT_WIDTH, SELECT_HEIGHT), modal=True, icon=BLANK_ICO)
     
     while True:
         event, values = window.read()
-        if event == EXIT_BUTTON:
+        if event == EXIT_BUTTON or sg.WIN_CLOSED:
             break
         if event == SAVE_BUTTON: 
             # Input error checking
@@ -172,6 +205,9 @@ def mainWindow():
             window[NAMES_COMBOBOX].update(values=namesList)
         if event == 'Subject':
             print(jsonData[values[NAMES_COMBOBOX]][NUMBER_INPUT])
+            insturment = str(jsonData[values[NAMES_COMBOBOX]][INSTRUMENT_INPUT])
+            pyperclip.copy("""Invoice for """ + insturment + """ Lessons 2nd Half Summer Term """ + today.year)
+            
         if event == 'Body':
             numberOfLessons = str(jsonData[values[NAMES_COMBOBOX]][NUMBER_INPUT])
             costOfLessons = str(jsonData[values[NAMES_COMBOBOX]][COST_INPUT])
@@ -179,9 +215,10 @@ def mainWindow():
             totalCost = '%.2f' % (round(float(totalCost), 2))
             insturment = str(jsonData[values[NAMES_COMBOBOX]][INSTRUMENT_INPUT])
             students = str(jsonData[values[NAMES_COMBOBOX]][STUDENT_INPUT])
+            today = date.today()
             pyperclip.copy("""Hi """ + str(values[NAMES_COMBOBOX]) +  """,
 
-Here is my invoice for """ + students + """'s """ + insturment + """ lessons 2nd half summer term 2023.
+Here is my invoice for """ + students + """'s """ + insturment + """ lessons 2nd half summer term """ + today.year + """.
 --------
 There are """ + numberOfLessons + """ sessions this 2nd half summer term from Tuesday 6th June to and including Tuesday 18th July.
  
@@ -194,15 +231,26 @@ Kind regards
 
 Robert""")
         if event == 'Settings':
-            sg.popup('Work in progress')
-            
+            settingsWindow()
 
     window.close()
 
 if __name__ == "__main__":    
     if (not os.path.isfile(TEMPLATES_PATH)):
         f = open(TEMPLATES_PATH, 'w')
+        f.write('{}')
+        f.close()
+        
+    if (not os.path.isfile(SETTINGS_PATH)):
+        f = open(SETTINGS_PATH, 'w')
+        f.write('[Preferences]\n')
+        f.write('theme = DarkAmber')
+        f.close()
 
-    sg.theme('DarkAmber')
+    config = ConfigParser()
+    config.read(SETTINGS_PATH)
+    theme = config.get('Preferences', 'theme')
+        
+    sg.theme(theme)
 
     mainWindow()
