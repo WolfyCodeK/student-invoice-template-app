@@ -10,11 +10,17 @@ from configparser import ConfigParser
 themeList = ['Black', 'BlueMono', 'BluePurple', 'BrightColors', 'BrownBlue', 'Dark', 'Dark2', 'DarkAmber', 'DarkBlack', 'DarkBlack1', 'DarkBlue', 'DarkBlue1', 'DarkBlue10', 'DarkBlue11', 'DarkBlue12', 'DarkBlue13', 'DarkBlue14', 'DarkBlue15', 'DarkBlue16', 'DarkBlue17', 'DarkBlue2', 'DarkBlue3', 'DarkBlue4', 'DarkBlue5', 'DarkBlue6', 'DarkBlue7', 'DarkBlue8', 'DarkBlue9', 'DarkBrown', 'DarkBrown1', 'DarkBrown2', 'DarkBrown3', 'DarkBrown4', 'DarkBrown5', 'DarkBrown6', 'DarkGreen', 'DarkGreen1', 'DarkGreen2', 'DarkGreen3', 'DarkGreen4', 'DarkGreen5', 'DarkGreen6', 'DarkGrey', 'DarkGrey1', 'DarkGrey2', 'DarkGrey3', 'DarkGrey4', 'DarkGrey5', 'DarkGrey6', 'DarkGrey7', 'DarkPurple', 'DarkPurple1', 'DarkPurple2', 'DarkPurple3', 'DarkPurple4', 'DarkPurple5', 'DarkPurple6', 'DarkRed', 'DarkRed1', 'DarkRed2', 'DarkTanBlue', 'DarkTeal', 'DarkTeal1', 'DarkTeal10', 'DarkTeal11', 'DarkTeal12', 'DarkTeal2', 'DarkTeal3', 'DarkTeal4', 'DarkTeal5', 'DarkTeal6', 'DarkTeal7', 'DarkTeal8', 'DarkTeal9', 'Default', 'Default1', 'DefaultNoMoreNagging', 'Green', 'GreenMono', 'GreenTan', 'HotDogStand', 'Kayak', 'LightBlue', 'LightBlue1', 'LightBlue2', 'LightBlue3', 'LightBlue4', 'LightBlue5', 'LightBlue6', 'LightBlue7', 'LightBrown', 'LightBrown1', 'LightBrown10', 'LightBrown11', 'LightBrown12', 'LightBrown13', 'LightBrown2', 'LightBrown3', 'LightBrown4', 'LightBrown5', 'LightBrown6', 'LightBrown7', 'LightBrown8', 'LightBrown9', 'LightGray1', 'LightGreen', 'LightGreen1', 'LightGreen10', 'LightGreen2', 'LightGreen3', 'LightGreen4', 'LightGreen5', 'LightGreen6', 'LightGreen7', 'LightGreen8', 'LightGreen9', 'LightGrey', 'LightGrey1', 'LightGrey2', 'LightGrey3', 'LightGrey4', 'LightGrey5', 'LightGrey6', 'LightPurple', 'LightTeal', 'LightYellow', 'Material1', 'Material2', 'NeutralBlue', 'Purple', 'Reddit', 'Reds', 'SandyBeach', 'SystemDefault', 'SystemDefault1', 'SystemDefaultForReal', 'Tan', 'TanBlue', 'TealMono', 'Topanga']
 
 # Term Dates
+autumn1 = [date(2023, 9, 4), date(2023, 10, 21)]
+autumn2 = [date(2023, 9, 30), date(2023, 12, 23)]
 
+spring1 = [date(2024, 1, 8), date(2024, 2, 10)]
+spring2  = [date(2024, 2, 19), date(2024, 3, 30)]
+
+summer1 = [date(2024, 4, 15), date(2024, 5, 25)]
+summer2 = [date(2024, 5, 3), date(2024, 6, 24)]
 
 # Custom Fonts
-titleFont = ("Courier New", 15)
-textFont = ("Courier New", 12)
+textFont = ('Space Mono', 12)
 
 # File Paths
 TEMPLATES_PATH = 'templates.json'
@@ -28,7 +34,7 @@ MAIN_ICO = 'res\Moneybox.ico'
 MAIN_WIDTH = 600
 MAIN_HEIGHT = 225
 SELECT_WIDTH = 300
-SELECT_HEIGHT = 275
+SELECT_HEIGHT = 350
 SETTINGS_WIDTH = 300
 SETTINGS_HEIGHT = 100
 
@@ -43,7 +49,7 @@ SAVE_BUTTON = 'Save & Close'
 
 # Combo Values
 NAMES_COMBOBOX = 'Names'
-THEME_COMBOBOX = 'Theme'
+THEME_COMBOBOX = '<Theme>'
 
 # Input Values
 RECIPIENT_INPUT = 'Recipient'
@@ -61,7 +67,7 @@ def checkSelectFieldsAreNotEmpty(values):
 def settingsWindow():
     layout = [
                 [
-                    sg.Text(THEME_COMBOBOX, font=titleFont), 
+                    sg.Text(THEME_COMBOBOX, font=textFont), 
                     sg.Combo(themeList, font=textFont, size=INPUT_SIZE, readonly=True, key=THEME_COMBOBOX)
                 ],
                 [
@@ -209,7 +215,7 @@ def mainWindow():
     layout = [  
                 [
                     [
-                        sg.Text('Templates', font=titleFont, pad=PADDING),
+                        sg.Text('<Templates>', font=textFont),
                         sg.Combo(namesList, enable_events=True, default_value="", pad=PADDING, key=NAMES_COMBOBOX, size=15, font=textFont, readonly=True),
                         sg.Button(EDIT_BUTTON, font=textFont, disabled=True),
                         sg.Button('Subject', font=textFont, disabled=True),
@@ -228,8 +234,6 @@ def mainWindow():
     
     # Event Loop
     while True:
-        print("hello")
-        
         event, values = window.read()
         if event == sg.WIN_CLOSED or event == EXIT_BUTTON:
             break
