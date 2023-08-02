@@ -19,7 +19,7 @@ MAIN_ICO = 'res\Moneybox.ico'
 MAIN_WIDTH = 600
 MAIN_HEIGHT = 225
 SELECT_WIDTH = 300
-SELECT_HEIGHT = 250
+SELECT_HEIGHT = 275
 
 # Element Sizes
 PADDING = 15
@@ -37,11 +37,14 @@ NAMES_COMBOBOX = 'Names'
 RECIPIENT_INPUT = 'Recipient'
 NUMBER_INPUT = 'Number'
 COST_INPUT = 'Cost'
+INSTRUMENT_INPUT = 'INSTRUMENT'
 STUDENT_INPUT = 'Student'
 INPUT_SIZE = 15
 
+instrumentsList = ['Piano', 'Drum', 'Guitar', 'Vocal']
+
 def checkSelectFieldsAreNotEmpty(values):
-    return len(str(values[RECIPIENT_INPUT])) == 0 or len(str(values[NUMBER_INPUT])) == 0 or len(str(values[COST_INPUT])) == 0 or len(str(values[STUDENT_INPUT])) == 0
+    return len(str(values[RECIPIENT_INPUT])) == 0 or len(str(values[NUMBER_INPUT])) == 0 or len(str(values[COST_INPUT])) == 0 or len(str(values[INSTRUMENT_INPUT])) == 0 or len(str(values[STUDENT_INPUT])) == 0
 
 def selectedTemplateWindow(isNewTemplate, name):
     with open(TEMPLATES_PATH, 'r') as f:
@@ -51,6 +54,7 @@ def selectedTemplateWindow(isNewTemplate, name):
     recipientDisabled = False
     numberDefault = ''
     costDefault = ''
+    instrumentDefault = ''
     studentDefault = ''
     
     if (isNewTemplate == False):
@@ -58,15 +62,16 @@ def selectedTemplateWindow(isNewTemplate, name):
         recipientDisabled = True
         numberDefault = jsonData[name][NUMBER_INPUT]
         costDefault = jsonData[name][COST_INPUT]   
+        instrumentDefault = jsonData[name][INSTRUMENT_INPUT]
         studentDefault = jsonData[name][STUDENT_INPUT] 
     
     layout = [[sg.Text('Recipient', font=textFont), sg.Input(size=INPUT_SIZE*2, font=textFont, key=RECIPIENT_INPUT,
             default_text=recipientDefault, disabled=recipientDisabled, disabled_readonly_background_color='DarkRed')],
             [sg.Text('Number of lessons', font=textFont), sg.Input(size=INPUT_SIZE, font=textFont, key=NUMBER_INPUT, default_text=numberDefault)],
-            [sg.Text('Cost of lesson  £', font=textFont), sg.Input(size=INPUT_SIZE, font=textFont, key=COST_INPUT,
-            default_text=costDefault)],
+            [sg.Text('Cost of lesson  £', font=textFont), sg.Input(size=INPUT_SIZE, font=textFont, key=COST_INPUT, default_text=costDefault)],
+            [sg.Text('Instrument', font=textFont), sg.InputCombo(values=sorted(instrumentsList), size=INPUT_SIZE, font=textFont, key=INSTRUMENT_INPUT, default_value=instrumentDefault)],
             [sg.Text('Student(s)', font=textFont)], 
-            [sg.Multiline(size=(INPUT_SIZE*2, 2), font=textFont, key=STUDENT_INPUT, default_text=studentDefault)],
+            [sg.Multiline(size=(INPUT_SIZE*2, 3), font=textFont, key=STUDENT_INPUT, default_text=studentDefault)],
             [sg.VPush()],
             [sg.Button(SAVE_BUTTON, font=textFont), sg.Push(), sg.Button(EXIT_BUTTON, font=textFont)]
             ]
@@ -98,6 +103,7 @@ def selectedTemplateWindow(isNewTemplate, name):
                     info = {
                         NUMBER_INPUT : values[NUMBER_INPUT],
                         COST_INPUT : '%.2f' % (round(float(values[COST_INPUT]), 2)),
+                        INSTRUMENT_INPUT : values[INSTRUMENT_INPUT],
                         STUDENT_INPUT : values[STUDENT_INPUT]
                     }
                     
@@ -171,9 +177,11 @@ def mainWindow():
             costOfLessons = str(jsonData[values[NAMES_COMBOBOX]][COST_INPUT])
             totalCost = str(int(numberOfLessons) * float(costOfLessons))
             totalCost = '%.2f' % (round(float(totalCost), 2))
+            insturment = str(jsonData[values[NAMES_COMBOBOX]][INSTRUMENT_INPUT])
+            students = str(jsonData[values[NAMES_COMBOBOX]][STUDENT_INPUT])
             pyperclip.copy("""Hi """ + str(values[NAMES_COMBOBOX]) +  """,
 
-Here is my invoice for Melody's drum lessons 2nd half summer term 2023.
+Here is my invoice for """ + students + """'s """ + insturment + """ lessons 2nd half summer term 2023.
 --------
 There are """ + numberOfLessons + """ sessions this 2nd half summer term from Tuesday 6th June to and including Tuesday 18th July.
  
@@ -182,7 +190,9 @@ There are """ + numberOfLessons + """ sessions this 2nd half summer term from Tu
 Thank you
 --------
 
-Kind regards""")
+Kind regards
+
+Robert""")
         if event == 'Settings':
             sg.popup('Work in progress')
             
