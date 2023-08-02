@@ -11,6 +11,11 @@ themeList = ['Black', 'BlueMono', 'BluePurple', 'BrightColors', 'BrownBlue', 'Da
 
 # Term Dates
 today = datetime.datetime.now()
+#currentDate = today
+year = int(sg.popup_get_text('YEAR', size= 10))
+month = int(sg.popup_get_text('MONTH', size= 10))
+day = int(sg.popup_get_text('DAY', size= 10))
+currentDate = datetime.datetime(year, month, day)
 
 autumn1 = [datetime.datetime(2023, 9, 4), datetime.datetime(2023, 10, 21)]
 autumn2 = [datetime.datetime(2023, 9, 30), datetime.datetime(2023, 12, 23)]
@@ -67,35 +72,35 @@ INPUT_SIZE = 15
 instrumentsList = ['piano', 'drum', 'guitar', 'vocal']
 
 def whichTerm(date):
-    currentTerm = ''
+    currentTerm = ['<DATE>', '<DATE>', '<DATE>']
     if (date >= autumn1[0] and date <= autumn1[1]):
         
-        bodyPhrase = str(numToWeekday(autumn1[0].isoweekday())) + ' ' + str(autumn1[0].day) + 'th ' + str(numToMonth(autumn1[0].month)) + ' to and including ' + str(numToWeekday(autumn1[1].isoweekday())) + ' ' + str(autumn1[1].day) + 'th ' + str(numToMonth(autumn1[1].month)) + '.'
+        bodyPhrase = str(numToWeekday(autumn1[0].isoweekday())) + ' ' + str(autumn1[0].day) + 'th ' + str(numToMonth(autumn1[0].month)) + ' to and including ' + str(numToWeekday(autumn1[1].isoweekday())) + ' ' + str(autumn1[1].day) + 'th ' + str(numToMonth(autumn1[1].month))
         currentTerm = ['1st half autumn term 2023', '1st Half Autumn Term 2023', bodyPhrase]
         
     elif (date >= autumn2[0] and date <= autumn2[1]):
         
-        bodyPhrase = str(numToWeekday(autumn2[0].isoweekday())) + ' ' + str(autumn2[0].day) + 'th ' + str(numToMonth(autumn2[0].month)) + ' to and including ' + str(numToWeekday(autumn2[1].isoweekday())) + ' ' + str(autumn2[1].day) + 'th ' + str(numToMonth(autumn2[1].month)) + '.'
+        bodyPhrase = str(numToWeekday(autumn2[0].isoweekday())) + ' ' + str(autumn2[0].day) + 'th ' + str(numToMonth(autumn2[0].month)) + ' to and including ' + str(numToWeekday(autumn2[1].isoweekday())) + ' ' + str(autumn2[1].day) + 'th ' + str(numToMonth(autumn2[1].month))
         currentTerm = ['2nd half autumn term 2023', '2nd Half Autumn Term 2023', bodyPhrase]
         
     elif (date >= spring1[0] and date <= spring1[1]):
         
-        bodyPhrase = str(numToWeekday(spring1[0].isoweekday())) + ' ' + str(spring1[0].day) + 'th ' + str(numToMonth(spring1[0].month)) + ' to and including ' + str(numToWeekday(spring1[1].isoweekday())) + ' ' + str(spring1[1].day) + 'th ' + str(numToMonth(spring1[1].month)) + '.'
+        bodyPhrase = str(numToWeekday(spring1[0].isoweekday())) + ' ' + str(spring1[0].day) + 'th ' + str(numToMonth(spring1[0].month)) + ' to and including ' + str(numToWeekday(spring1[1].isoweekday())) + ' ' + str(spring1[1].day) + 'th ' + str(numToMonth(spring1[1].month))
         currentTerm = ['1st half spring term 2023', '1st Half Spring Term 2023', bodyPhrase]
         
     elif (date >= spring2[0] and date <= spring2[1]):
         
-        bodyPhrase = str(numToWeekday(spring2[0].isoweekday())) + ' ' + str(spring2[0].day) + 'th ' + str(numToMonth(spring2[0].month)) + ' to and including ' + str(numToWeekday(spring2[1].isoweekday())) + ' ' + str(spring2[1].day) + 'th ' + str(numToMonth(spring2[1].month)) + '.'
+        bodyPhrase = str(numToWeekday(spring2[0].isoweekday())) + ' ' + str(spring2[0].day) + 'th ' + str(numToMonth(spring2[0].month)) + ' to and including ' + str(numToWeekday(spring2[1].isoweekday())) + ' ' + str(spring2[1].day) + 'th ' + str(numToMonth(spring2[1].month))
         currentTerm = ['2nd half spring term 2023', '2nd Half Spring Term 2023', bodyPhrase]
         
     elif (date >= summer1[0] and date <= summer1[1]):
         
-        bodyPhrase = str(numToWeekday(summer1[0].isoweekday())) + ' ' + str(summer1[0].day) + 'th ' + str(numToMonth(summer1[0].month)) + ' to and including ' + str(numToWeekday(summer1[1].isoweekday())) + ' ' + str(summer1[1].day) + 'th ' + str(numToMonth(summer1[1].month)) + '.'
+        bodyPhrase = str(numToWeekday(summer1[0].isoweekday())) + ' ' + str(summer1[0].day) + 'th ' + str(numToMonth(summer1[0].month)) + ' to and including ' + str(numToWeekday(summer1[1].isoweekday())) + ' ' + str(summer1[1].day) + 'th ' + str(numToMonth(summer1[1].month))
         currentTerm = ['1st half summer term 2023', '1st Half Summer Term 2023', bodyPhrase]
         
     elif (date >= summer2[0] and date <= summer2[1]):
         
-        bodyPhrase = str(numToWeekday(summer2[0].isoweekday())) + ' ' + str(summer2[0].day) + 'th ' + str(numToMonth(summer2[0].month)) + ' to and including ' + str(numToWeekday(summer2[1].isoweekday())) + ' ' + str(summer2[1].day) + 'th ' + str(numToMonth(summer2[1].month)) + '.'
+        bodyPhrase = str(numToWeekday(summer2[0].isoweekday())) + ' ' + str(summer2[0].day) + 'th ' + str(numToMonth(summer2[0].month)) + ' to and including ' + str(numToWeekday(summer2[1].isoweekday())) + ' ' + str(summer2[1].day) + 'th ' + str(numToMonth(summer2[1].month))
         currentTerm = ['2nd half summer term 2023', '2nd Half Summer Term 2023', bodyPhrase]    
         
     return currentTerm
@@ -326,7 +331,7 @@ def mainWindow():
                 
             window[NAMES_COMBOBOX].update(values=namesList)
         if event == 'Subject':
-            phrases = whichTerm(datetime.datetime(2024, 4, 28))
+            phrases = whichTerm(currentDate)
             
             insturment = str(jsonData[values[NAMES_COMBOBOX]][INSTRUMENT_INPUT])
             pyperclip.copy("""Invoice for """ + insturment + """ Lessons """ + str(phrases[1]))
@@ -340,14 +345,15 @@ def mainWindow():
             instrument = str(jsonData[values[NAMES_COMBOBOX]][INSTRUMENT_INPUT])
             students = str(jsonData[values[NAMES_COMBOBOX]][STUDENT_INPUT])
             
-            phrases = whichTerm(datetime.datetime(2024, 4, 28))
+            phrases = whichTerm(currentDate)
             print(phrases)
             
             pyperclip.copy("""Hi """ + name +  """,
 
 Here is my invoice for """ + students + """'s """ + instrument + """ lessons """ + str(phrases[0]) + """.
 --------
-There are """ + numberOfLessons + """ sessions this """ + str(phrases[2]) + '\n' + numberOfLessons + """ x £""" + costOfLessons + """ = £""" + totalCost + """
+There are """ + numberOfLessons + """ sessions this """ + str(phrases[2]) + """.
+""" + numberOfLessons + """ x £""" + costOfLessons + """ = £""" + totalCost + """
 
 Thank you
 --------
