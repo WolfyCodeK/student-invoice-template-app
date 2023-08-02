@@ -9,6 +9,9 @@ from configparser import ConfigParser
 # Theme List
 themeList = ['Black', 'BlueMono', 'BluePurple', 'BrightColors', 'BrownBlue', 'Dark', 'Dark2', 'DarkAmber', 'DarkBlack', 'DarkBlack1', 'DarkBlue', 'DarkBlue1', 'DarkBlue10', 'DarkBlue11', 'DarkBlue12', 'DarkBlue13', 'DarkBlue14', 'DarkBlue15', 'DarkBlue16', 'DarkBlue17', 'DarkBlue2', 'DarkBlue3', 'DarkBlue4', 'DarkBlue5', 'DarkBlue6', 'DarkBlue7', 'DarkBlue8', 'DarkBlue9', 'DarkBrown', 'DarkBrown1', 'DarkBrown2', 'DarkBrown3', 'DarkBrown4', 'DarkBrown5', 'DarkBrown6', 'DarkGreen', 'DarkGreen1', 'DarkGreen2', 'DarkGreen3', 'DarkGreen4', 'DarkGreen5', 'DarkGreen6', 'DarkGrey', 'DarkGrey1', 'DarkGrey2', 'DarkGrey3', 'DarkGrey4', 'DarkGrey5', 'DarkGrey6', 'DarkGrey7', 'DarkPurple', 'DarkPurple1', 'DarkPurple2', 'DarkPurple3', 'DarkPurple4', 'DarkPurple5', 'DarkPurple6', 'DarkRed', 'DarkRed1', 'DarkRed2', 'DarkTanBlue', 'DarkTeal', 'DarkTeal1', 'DarkTeal10', 'DarkTeal11', 'DarkTeal12', 'DarkTeal2', 'DarkTeal3', 'DarkTeal4', 'DarkTeal5', 'DarkTeal6', 'DarkTeal7', 'DarkTeal8', 'DarkTeal9', 'Default', 'Default1', 'DefaultNoMoreNagging', 'Green', 'GreenMono', 'GreenTan', 'HotDogStand', 'Kayak', 'LightBlue', 'LightBlue1', 'LightBlue2', 'LightBlue3', 'LightBlue4', 'LightBlue5', 'LightBlue6', 'LightBlue7', 'LightBrown', 'LightBrown1', 'LightBrown10', 'LightBrown11', 'LightBrown12', 'LightBrown13', 'LightBrown2', 'LightBrown3', 'LightBrown4', 'LightBrown5', 'LightBrown6', 'LightBrown7', 'LightBrown8', 'LightBrown9', 'LightGray1', 'LightGreen', 'LightGreen1', 'LightGreen10', 'LightGreen2', 'LightGreen3', 'LightGreen4', 'LightGreen5', 'LightGreen6', 'LightGreen7', 'LightGreen8', 'LightGreen9', 'LightGrey', 'LightGrey1', 'LightGrey2', 'LightGrey3', 'LightGrey4', 'LightGrey5', 'LightGrey6', 'LightPurple', 'LightTeal', 'LightYellow', 'Material1', 'Material2', 'NeutralBlue', 'Purple', 'Reddit', 'Reds', 'SandyBeach', 'SystemDefault', 'SystemDefault1', 'SystemDefaultForReal', 'Tan', 'TanBlue', 'TealMono', 'Topanga']
 
+# Term Dates
+
+
 # Custom Fonts
 titleFont = ("Courier New", 15)
 textFont = ("Courier New", 12)
@@ -40,7 +43,7 @@ SAVE_BUTTON = 'Save & Close'
 
 # Combo Values
 NAMES_COMBOBOX = 'Names'
-THEME_COMBOBOX = 'THEME'
+THEME_COMBOBOX = 'Theme'
 
 # Input Values
 RECIPIENT_INPUT = 'Recipient'
@@ -58,14 +61,16 @@ def checkSelectFieldsAreNotEmpty(values):
 def settingsWindow():
     layout = [
                 [
-                    sg.Text(THEME_COMBOBOX, font=textFont), 
+                    sg.Text(THEME_COMBOBOX, font=titleFont), 
                     sg.Combo(themeList, font=textFont, size=INPUT_SIZE, readonly=True, key=THEME_COMBOBOX)
                 ],
                 [
                     sg.VPush()
                 ],
                 [
-                    sg.Button(SAVE_BUTTON, font=textFont)
+                    sg.Button(SAVE_BUTTON, font=textFont),
+                    sg.Push(), 
+                    sg.Button(EXIT_BUTTON, font=textFont)
                 ]
         ]
     
@@ -74,7 +79,7 @@ def settingsWindow():
     # Event Loop
     while True:
         event, values = window.read()
-        if event == sg.WIN_CLOSED:
+        if event == EXIT_BUTTON or sg.WIN_CLOSED:
             break
         if event == SAVE_BUTTON:
             config = ConfigParser()
@@ -191,7 +196,7 @@ def mainWindow():
     
     supportButtons = [
                         [
-                            sg.Button('DELETE', font=textFont),
+                            sg.Button('DELETE', font=textFont, disabled=True),
                             sg.Push(),
                             sg.Button(NEW_BUTTON, font=textFont), 
                             sg.Button('Settings', font=textFont),
@@ -232,6 +237,7 @@ def mainWindow():
                 window[EDIT_BUTTON].update(disabled=False)
                 window['Subject'].update(disabled=False)
                 window['Body'].update(disabled=False)
+                window['DELETE'].update(disabled=False)
         if event == 'DELETE':
             choice = sg.popup_yes_no('Are you sure you want to delete this template?', font=textFont)
             if choice == "Yes":
@@ -252,6 +258,7 @@ def mainWindow():
                 window[EDIT_BUTTON].update(disabled=True)
                 window['Subject'].update(disabled=True)
                 window['Body'].update(disabled=True)
+                window['DELETE'].update(disabled=True)
              
         if event == EDIT_BUTTON:
             selectedTemplateWindow(False, values[NAMES_COMBOBOX])
@@ -261,6 +268,7 @@ def mainWindow():
             window[EDIT_BUTTON].update(disabled=True)
             window['Subject'].update(disabled=True)
             window['Body'].update(disabled=True)
+            window['DELETE'].update(disabled=True)
             
             with open(TEMPLATES_PATH, 'r') as f:
                 jsonData = json.load(f)
