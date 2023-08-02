@@ -40,6 +40,7 @@ SAVE_BUTTON = 'Save & Close'
 
 # Combo Values
 NAMES_COMBOBOX = 'Names'
+THEME_COMBOBOX = 'THEME'
 
 # Input Values
 RECIPIENT_INPUT = 'Recipient'
@@ -49,21 +50,28 @@ INSTRUMENT_INPUT = 'INSTRUMENT'
 STUDENT_INPUT = 'Student'
 INPUT_SIZE = 15
 
-instrumentsList = ['Piano', 'Drum', 'Guitar', 'Vocal']
+instrumentsList = ['piano', 'drum', 'guitar', 'vocal']
 
 def checkSelectFieldsAreNotEmpty(values):
     return len(str(values[RECIPIENT_INPUT])) == 0 or len(str(values[NUMBER_INPUT])) == 0 or len(str(values[COST_INPUT])) == 0 or len(str(values[INSTRUMENT_INPUT])) == 0 or len(str(values[STUDENT_INPUT])) == 0
 
 def settingsWindow():
-    THEME = 'THEME'
     layout = [
-        [sg.Text(THEME, font=textFont), sg.Combo(themeList, font=textFont, size=INPUT_SIZE, readonly=True, key=THEME)],
-        [sg.VPush()],
-        [sg.Button(SAVE_BUTTON, font=textFont)]
-    ]
+                [
+                    sg.Text(THEME_COMBOBOX, font=textFont), 
+                    sg.Combo(themeList, font=textFont, size=INPUT_SIZE, readonly=True, key=THEME_COMBOBOX)
+                ],
+                [
+                    sg.VPush()
+                ],
+                [
+                    sg.Button(SAVE_BUTTON, font=textFont)
+                ]
+        ]
     
     window = sg.Window('', layout, element_justification='c', size=(SELECT_WIDTH, SETTINGS_HEIGHT), modal=True, icon=BLANK_ICO)
     
+    # Event Loop
     while True:
         event, values = window.read()
         if event == sg.WIN_CLOSED:
@@ -71,7 +79,7 @@ def settingsWindow():
         if event == SAVE_BUTTON:
             config = ConfigParser()
             config.read(SETTINGS_PATH)
-            config.set('Preferences', 'theme', values[THEME])
+            config.set('Preferences', 'theme', values[THEME_COMBOBOX])
             
             with open(SETTINGS_PATH, 'w') as configfile:
                 config.write(configfile)
@@ -82,6 +90,7 @@ def settingsWindow():
 def selectedTemplateWindow(isNewTemplate, name):
     with open(TEMPLATES_PATH, 'r') as f:
         jsonData = json.load(f)
+        f.close()
         
     recipientDefault = ''
     recipientDisabled = False
@@ -98,19 +107,42 @@ def selectedTemplateWindow(isNewTemplate, name):
         instrumentDefault = jsonData[name][INSTRUMENT_INPUT]
         studentDefault = jsonData[name][STUDENT_INPUT] 
     
-    layout = [[sg.Text('Recipient', font=textFont), sg.Input(size=INPUT_SIZE*2, font=textFont, key=RECIPIENT_INPUT,
-            default_text=recipientDefault, disabled=recipientDisabled, disabled_readonly_background_color='DarkRed')],
-            [sg.Text('Number of lessons', font=textFont), sg.Input(size=INPUT_SIZE, font=textFont, key=NUMBER_INPUT, default_text=numberDefault)],
-            [sg.Text('Cost of lesson  £', font=textFont), sg.Input(size=INPUT_SIZE, font=textFont, key=COST_INPUT, default_text=costDefault)],
-            [sg.Text('Instrument', font=textFont), sg.Combo(values=sorted(instrumentsList), size=INPUT_SIZE, font=textFont, key=INSTRUMENT_INPUT, default_value=instrumentDefault, readonly=True)],
-            [sg.Text('Student(s)', font=textFont)], 
-            [sg.Multiline(size=(INPUT_SIZE*2, 3), font=textFont, key=STUDENT_INPUT, default_text=studentDefault)],
-            [sg.VPush()],
-            [sg.Button(SAVE_BUTTON, font=textFont), sg.Push(), sg.Button(EXIT_BUTTON, font=textFont)]
+    layout = [
+                [
+                    sg.Text('Recipient', font=textFont), 
+                    sg.Input(size=INPUT_SIZE*2, font=textFont, key=RECIPIENT_INPUT, default_text=recipientDefault, disabled=recipientDisabled, disabled_readonly_background_color='DarkRed')
+                ],
+                [
+                    sg.Text('Number of lessons', font=textFont), 
+                    sg.Input(size=INPUT_SIZE, font=textFont, key=NUMBER_INPUT, default_text=numberDefault)
+                ],
+                [
+                    sg.Text('Cost of lesson  £', font=textFont), 
+                    sg.Input(size=INPUT_SIZE, font=textFont, key=COST_INPUT, default_text=costDefault)
+                ],
+                [   sg.Text('Instrument', font=textFont), 
+                    sg.Combo(values=sorted(instrumentsList), size=INPUT_SIZE,
+                    font=textFont, key=INSTRUMENT_INPUT, default_value=instrumentDefault, readonly=True)
+                ],
+                [   
+                    sg.Text('Student(s)', font=textFont)
+                ], 
+                [
+                    sg.Multiline(size=(INPUT_SIZE*2, 3), font=textFont, key=STUDENT_INPUT, default_text=studentDefault)
+                ],
+                [
+                    sg.VPush()
+                ],
+                [
+                    sg.Button(SAVE_BUTTON, font=textFont), 
+                    sg.Push(), 
+                    sg.Button(EXIT_BUTTON, font=textFont)
+                ]
             ]
     
     window = sg.Window('', layout, element_justification='c', size=(SELECT_WIDTH, SELECT_HEIGHT), modal=True, icon=BLANK_ICO)
     
+    # Event Loop
     while True:
         event, values = window.read()
         if event == EXIT_BUTTON or sg.WIN_CLOSED:
@@ -144,40 +176,53 @@ def selectedTemplateWindow(isNewTemplate, name):
 
                     with open(TEMPLATES_PATH, 'w') as f:
                         f.write(json.dumps(jsonData))
-                    
+                        f.close()
                     break
-    f.close();  
     window.close()
 
 def mainWindow():
+    today = date.today()
+    
     with open(TEMPLATES_PATH, 'r') as f:
         jsonData = json.load(f)
         namesList = list(jsonData.keys())
         namesList = sorted(namesList, key=str.lower)
+        f.close()
     
     supportButtons = [
-                        [sg.Button(NEW_BUTTON, font=textFont), 
-                        sg.Button('Settings', font=textFont),
-                        sg.Button(EXIT_BUTTON, font=textFont)]       
+                        [
+                            sg.Button('DELETE', font=textFont),
+                            sg.Push(),
+                            sg.Button(NEW_BUTTON, font=textFont), 
+                            sg.Button('Settings', font=textFont),
+                            sg.Button(EXIT_BUTTON, font=textFont)
+                        ]       
                     ]
 
     layout = [  
-            [
                 [
-                sg.Text('Templates', font=titleFont, pad=PADDING),
-                sg.Combo(namesList, enable_events=True, default_value="", pad=PADDING, key=NAMES_COMBOBOX, size=15, font=textFont, readonly=True),
-                sg.Button(EDIT_BUTTON, font=textFont, disabled=True),
-                sg.Button('Subject', font=textFont, disabled=True),
-                sg.Button('Body', font=textFont, disabled=True)
-                ]],
-                [sg.VPush()],
-                [sg.Column(supportButtons, element_justification='right',expand_x=True)]
+                    [
+                        sg.Text('Templates', font=titleFont, pad=PADDING),
+                        sg.Combo(namesList, enable_events=True, default_value="", pad=PADDING, key=NAMES_COMBOBOX, size=15, font=textFont, readonly=True),
+                        sg.Button(EDIT_BUTTON, font=textFont, disabled=True),
+                        sg.Button('Subject', font=textFont, disabled=True),
+                        sg.Button('Body', font=textFont, disabled=True)
+                    ]
+                ],
+                [
+                    sg.VPush()
+                ],
+                [
+                    sg.Column(supportButtons, element_justification='right',expand_x=True)
+                ]
             ]
 
     window = sg.Window('Invoice Templates', layout, element_justification='l', size=(MAIN_WIDTH, MAIN_HEIGHT), icon=MAIN_ICO)
     
-    # Event Loop to process "events" and get the "values" of the inputs
+    # Event Loop
     while True:
+        print("hello")
+        
         event, values = window.read()
         if event == sg.WIN_CLOSED or event == EXIT_BUTTON: # if user closes window or clicks cancel
             break
@@ -187,7 +232,27 @@ def mainWindow():
                 window[EDIT_BUTTON].update(disabled=False)
                 window['Subject'].update(disabled=False)
                 window['Body'].update(disabled=False)
+        if event == 'DELETE':
+            choice = sg.popup_yes_no('Are you sure you want to delete this template?', font=textFont)
+            if choice == "Yes":
+                with open(TEMPLATES_PATH, 'r') as f:
+                    jsonData = json.load(f)
+                    f.close()
+                    
+                del jsonData[values[NAMES_COMBOBOX]]   
                 
+                namesList = list(jsonData.keys())
+                namesList = sorted(namesList, key=str.lower)
+                window[NAMES_COMBOBOX].update(values=namesList) 
+                
+                with open(TEMPLATES_PATH, 'w') as f:
+                    f.write(json.dumps(jsonData))   
+                    f.close()          
+                    
+                window[EDIT_BUTTON].update(disabled=True)
+                window['Subject'].update(disabled=True)
+                window['Body'].update(disabled=True)
+             
         if event == EDIT_BUTTON:
             selectedTemplateWindow(False, values[NAMES_COMBOBOX])
         if event == NEW_BUTTON:
@@ -204,21 +269,20 @@ def mainWindow():
                 
             window[NAMES_COMBOBOX].update(values=namesList)
         if event == 'Subject':
-            print(jsonData[values[NAMES_COMBOBOX]][NUMBER_INPUT])
             insturment = str(jsonData[values[NAMES_COMBOBOX]][INSTRUMENT_INPUT])
-            pyperclip.copy("""Invoice for """ + insturment + """ Lessons 2nd Half Summer Term """ + today.year)
+            pyperclip.copy("""Invoice for """ + insturment + """ Lessons 2nd Half Summer Term """ + str(today.year))
             
         if event == 'Body':
+            name = str(values[NAMES_COMBOBOX])
             numberOfLessons = str(jsonData[values[NAMES_COMBOBOX]][NUMBER_INPUT])
             costOfLessons = str(jsonData[values[NAMES_COMBOBOX]][COST_INPUT])
             totalCost = str(int(numberOfLessons) * float(costOfLessons))
             totalCost = '%.2f' % (round(float(totalCost), 2))
             insturment = str(jsonData[values[NAMES_COMBOBOX]][INSTRUMENT_INPUT])
             students = str(jsonData[values[NAMES_COMBOBOX]][STUDENT_INPUT])
-            today = date.today()
-            pyperclip.copy("""Hi """ + str(values[NAMES_COMBOBOX]) +  """,
+            pyperclip.copy("""Hi """ + name +  """,
 
-Here is my invoice for """ + students + """'s """ + insturment + """ lessons 2nd half summer term """ + today.year + """.
+Here is my invoice for """ + students + """'s """ + insturment + """ lessons 2nd half summer term """ + str(today.year) + """.
 --------
 There are """ + numberOfLessons + """ sessions this 2nd half summer term from Tuesday 6th June to and including Tuesday 18th July.
  
