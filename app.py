@@ -82,9 +82,9 @@ INPUT_SIZE = 15
 
 instrumentsList = ['piano', 'drum', 'guitar', 'vocal', 'music', 'singing', 'bass guitar', 'classical guitar']
 
-def getPhrases(startDate, endDate):
+def getPhrases(startDate, endDate, half, term):
     bodyPhrase = str(numToWeekday(startDate.isoweekday())) + ' ' + str(startDate.day) + 'th ' + str(numToMonth(startDate.month)) + ' to and including ' + str(numToWeekday(endDate.isoweekday())) + ' ' + str(endDate.day) + 'th ' + str(numToMonth(endDate.month))
-    currentTerm = ['1st half autumn term 2023', '1st Half Autumn Term 2023', bodyPhrase]
+    currentTerm = [half + ' half ' + term + ' term ' + str(startDate.year), half + ' Half ' + term.capitalize() + ' Term ' + str(endDate.year), bodyPhrase]
     
     return currentTerm
 
@@ -96,37 +96,37 @@ def whichTerm(date, numberOfLessons, day):
         startDate = nextDayInWeek(autumn1[0], day)
         endDate = startDate + dateGap
         
-        currentTerm = getPhrases(startDate, endDate)
+        currentTerm = getPhrases(startDate, endDate, '1st', 'autumn')
         
     elif (date >= autumn2[0] and date <= autumn2[1]):
         startDate = nextDayInWeek(autumn2[0], day)
         endDate = startDate + dateGap
         
-        currentTerm = getPhrases(startDate, endDate)
+        currentTerm = getPhrases(startDate, endDate, '2nd', 'autumn')
         
     elif (date >= spring1[0] and date <= spring1[1]):
         startDate = nextDayInWeek(spring1[0], day)
         endDate = startDate + dateGap
         
-        currentTerm = getPhrases(startDate, endDate)
+        currentTerm = getPhrases(startDate, endDate, '1st', 'spring')
         
     elif (date >= spring2[0] and date <= spring2[1]):
         startDate = nextDayInWeek(spring2[0], day)
         endDate = startDate + dateGap
         
-        currentTerm = getPhrases(startDate, endDate)
+        currentTerm = getPhrases(startDate, endDate, '2nd', 'spring')
         
     elif (date >= summer1[0] and date <= summer1[1]):
         startDate = nextDayInWeek(summer1[0], day)
         endDate = startDate + dateGap
         
-        currentTerm = getPhrases(startDate, endDate)
+        currentTerm = getPhrases(startDate, endDate, '1st', 'summer')
         
     elif (date >= summer2[0] and date <= summer2[1]):
         startDate = nextDayInWeek(summer2[0], day)
         endDate = startDate + dateGap
         
-        currentTerm = getPhrases(startDate, endDate) 
+        currentTerm = getPhrases(startDate, endDate, '2nd', 'summer') 
         
     return currentTerm
         
@@ -387,6 +387,7 @@ def mainWindow():
                 jsonData = json.load(f)
             
             day = str(jsonData[values[NAMES_COMBOBOX]][DAY_INPUT])
+            numberOfLessons = str(jsonData[values[NAMES_COMBOBOX]][NUMBER_INPUT])
             instrument = str(jsonData[values[NAMES_COMBOBOX]][INSTRUMENT_INPUT])
             phrases = whichTerm(currentDate, numberOfLessons, day)
             
