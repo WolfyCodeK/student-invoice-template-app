@@ -53,7 +53,7 @@ MAIN_ICO = 'res\Email.ico'
 # Window Sizes
 MAIN_WIDTH = 600
 MAIN_HEIGHT = 225
-SELECT_WIDTH = 300
+SELECT_WIDTH = 350
 SELECT_HEIGHT = 350
 SETTINGS_WIDTH = 300
 SETTINGS_HEIGHT = 100
@@ -221,7 +221,7 @@ def selectedTemplateWindow(isNewTemplate, name):
                     sg.Input(size=INPUT_SIZE, font=textFont, key=COST_INPUT, default_text=costDefault)
                 ],
                 [   sg.Text('Instrument', font=textFont), 
-                    sg.Combo(values=sorted(instrumentsList), size=INPUT_SIZE,
+                    sg.Combo(values=sorted(instrumentsList), size=INPUT_SIZE*2,
                     font=textFont, key=INSTRUMENT_INPUT, default_value=instrumentDefault, readonly=True)
                 ],
                 [
@@ -244,7 +244,7 @@ def selectedTemplateWindow(isNewTemplate, name):
                 ]
             ]
     
-    window = sg.Window('', layout, element_justification='c', size=(SELECT_WIDTH, SELECT_HEIGHT), modal=True, icon=BLANK_ICO, keep_on_top=KEEP_ON_TOP)
+    window = sg.Window('', layout, element_justification='l', size=(SELECT_WIDTH, SELECT_HEIGHT), modal=True, icon=BLANK_ICO, keep_on_top=KEEP_ON_TOP)
     
     # Event Loop
     while True:
@@ -387,7 +387,6 @@ def mainWindow():
                 jsonData = json.load(f)
             
             day = str(jsonData[values[NAMES_COMBOBOX]][DAY_INPUT])
-            print(day)
             instrument = str(jsonData[values[NAMES_COMBOBOX]][INSTRUMENT_INPUT])
             phrases = whichTerm(currentDate, numberOfLessons, day)
             
@@ -407,8 +406,7 @@ def mainWindow():
             students = str(jsonData[values[NAMES_COMBOBOX]][STUDENT_INPUT])
             
             phrases = whichTerm(currentDate, numberOfLessons, day)
-            print(phrases)
-            
+        
             pyperclip.copy(
 """Hi """ + name +  """,
 
