@@ -5,16 +5,26 @@ import re
 import pyperclip
 import datetime
 from configparser import ConfigParser
+from enum import Enum
+
+class PhraseType(Enum):
+    INVOICE = 0
+    SUBJECT = 1
+    DATES = 2
 
 # Theme List
 themeList = ['Black', 'BlueMono', 'BluePurple', 'BrightColors', 'BrownBlue', 'Dark', 'Dark2', 'DarkAmber', 'DarkBlack', 'DarkBlack1', 'DarkBlue', 'DarkBlue1', 'DarkBlue10', 'DarkBlue11', 'DarkBlue12', 'DarkBlue13', 'DarkBlue14', 'DarkBlue15', 'DarkBlue16', 'DarkBlue17', 'DarkBlue2', 'DarkBlue3', 'DarkBlue4', 'DarkBlue5', 'DarkBlue6', 'DarkBlue7', 'DarkBlue8', 'DarkBlue9', 'DarkBrown', 'DarkBrown1', 'DarkBrown2', 'DarkBrown3', 'DarkBrown4', 'DarkBrown5', 'DarkBrown6', 'DarkGreen', 'DarkGreen1', 'DarkGreen2', 'DarkGreen3', 'DarkGreen4', 'DarkGreen5', 'DarkGreen6', 'DarkGrey', 'DarkGrey1', 'DarkGrey2', 'DarkGrey3', 'DarkGrey4', 'DarkGrey5', 'DarkGrey6', 'DarkGrey7', 'DarkPurple', 'DarkPurple1', 'DarkPurple2', 'DarkPurple3', 'DarkPurple4', 'DarkPurple5', 'DarkPurple6', 'DarkRed', 'DarkRed1', 'DarkRed2', 'DarkTanBlue', 'DarkTeal', 'DarkTeal1', 'DarkTeal10', 'DarkTeal11', 'DarkTeal12', 'DarkTeal2', 'DarkTeal3', 'DarkTeal4', 'DarkTeal5', 'DarkTeal6', 'DarkTeal7', 'DarkTeal8', 'DarkTeal9', 'Default', 'Default1', 'DefaultNoMoreNagging', 'Green', 'GreenMono', 'GreenTan', 'HotDogStand', 'Kayak', 'LightBlue', 'LightBlue1', 'LightBlue2', 'LightBlue3', 'LightBlue4', 'LightBlue5', 'LightBlue6', 'LightBlue7', 'LightBrown', 'LightBrown1', 'LightBrown10', 'LightBrown11', 'LightBrown12', 'LightBrown13', 'LightBrown2', 'LightBrown3', 'LightBrown4', 'LightBrown5', 'LightBrown6', 'LightBrown7', 'LightBrown8', 'LightBrown9', 'LightGray1', 'LightGreen', 'LightGreen1', 'LightGreen10', 'LightGreen2', 'LightGreen3', 'LightGreen4', 'LightGreen5', 'LightGreen6', 'LightGreen7', 'LightGreen8', 'LightGreen9', 'LightGrey', 'LightGrey1', 'LightGrey2', 'LightGrey3', 'LightGrey4', 'LightGrey5', 'LightGrey6', 'LightPurple', 'LightTeal', 'LightYellow', 'Material1', 'Material2', 'NeutralBlue', 'Purple', 'Reddit', 'Reds', 'SandyBeach', 'SystemDefault', 'SystemDefault1', 'SystemDefaultForReal', 'Tan', 'TanBlue', 'TealMono', 'Topanga']
 
+# Default values
+DEFAULT_THEME = 'DarkAmber'
+KEEP_ON_TOP = True
+
 # Term Dates
 today = datetime.datetime.now()
 #currentDate = today
-year = int(sg.popup_get_text('YEAR', size= 10))
-month = int(sg.popup_get_text('MONTH', size= 10))
-day = int(sg.popup_get_text('DAY', size= 10))
+year = int(sg.popup_get_text('YEAR', size= 10, keep_on_top=KEEP_ON_TOP))
+month = int(sg.popup_get_text('MONTH', size= 10, keep_on_top=KEEP_ON_TOP))
+day = int(sg.popup_get_text('DAY', size= 10, keep_on_top=KEEP_ON_TOP))
 currentDate = datetime.datetime(year, month, day)
 
 autumn1 = [datetime.datetime(2023, 9, 4), datetime.datetime(2023, 10, 21)]
@@ -65,11 +75,12 @@ THEME_COMBOBOX = '<Theme>'
 RECIPIENT_INPUT = 'Recipient'
 NUMBER_INPUT = 'Number'
 COST_INPUT = 'Cost'
-INSTRUMENT_INPUT = 'INSTRUMENT'
+INSTRUMENT_INPUT = 'Instrument'
+DAY_INPUT = 'Day'
 STUDENT_INPUT = 'Student'
 INPUT_SIZE = 15
 
-instrumentsList = ['piano', 'drum', 'guitar', 'vocal']
+instrumentsList = ['piano', 'drum', 'guitar', 'vocal', 'music', 'singing', 'bass guitar', 'classical guitar']
 
 def whichTerm(date):
     currentTerm = ['<DATE>', '<DATE>', '<DATE>']
@@ -130,7 +141,7 @@ def settingsWindow():
                 ]
         ]
     
-    window = sg.Window('', layout, element_justification='c', size=(SELECT_WIDTH, SETTINGS_HEIGHT), modal=True, icon=BLANK_ICO)
+    window = sg.Window('', layout, element_justification='c', size=(SELECT_WIDTH, SETTINGS_HEIGHT), modal=True, icon=BLANK_ICO, keep_on_top=KEEP_ON_TOP)
     
     # Event Loop
     while True:
@@ -158,6 +169,7 @@ def selectedTemplateWindow(isNewTemplate, name):
     numberDefault = ''
     costDefault = ''
     instrumentDefault = ''
+    dayDefault = ''
     studentDefault = ''
     
     if (isNewTemplate == False):
@@ -166,6 +178,7 @@ def selectedTemplateWindow(isNewTemplate, name):
         numberDefault = jsonData[name][NUMBER_INPUT]
         costDefault = jsonData[name][COST_INPUT]   
         instrumentDefault = jsonData[name][INSTRUMENT_INPUT]
+        dayDefault = jsonData[name][DAY_INPUT]
         studentDefault = jsonData[name][STUDENT_INPUT] 
     
     layout = [
@@ -185,11 +198,15 @@ def selectedTemplateWindow(isNewTemplate, name):
                     sg.Combo(values=sorted(instrumentsList), size=INPUT_SIZE,
                     font=textFont, key=INSTRUMENT_INPUT, default_value=instrumentDefault, readonly=True)
                 ],
+                [
+                    sg.Text('Start Day', font=textFont),
+                    sg.Combo(values=weekdays, size=INPUT_SIZE, font=textFont, key=DAY_INPUT, default_value=dayDefault, readonly=True)
+                ],
                 [   
                     sg.Text('Student(s)', font=textFont)
                 ], 
                 [
-                    sg.Multiline(size=(INPUT_SIZE*2, 3), font=textFont, key=STUDENT_INPUT, default_text=studentDefault)
+                    sg.Multiline(size=(INPUT_SIZE*2, 2), font=textFont, key=STUDENT_INPUT, default_text=studentDefault)
                 ],
                 [
                     sg.VPush()
@@ -201,7 +218,7 @@ def selectedTemplateWindow(isNewTemplate, name):
                 ]
             ]
     
-    window = sg.Window('', layout, element_justification='c', size=(SELECT_WIDTH, SELECT_HEIGHT), modal=True, icon=BLANK_ICO)
+    window = sg.Window('', layout, element_justification='c', size=(SELECT_WIDTH, SELECT_HEIGHT), modal=True, icon=BLANK_ICO, keep_on_top=KEEP_ON_TOP)
     
     # Event Loop
     while True:
@@ -211,18 +228,19 @@ def selectedTemplateWindow(isNewTemplate, name):
         if event == SAVE_BUTTON: 
             # Input error checking
             if re.search('\d', values[RECIPIENT_INPUT]):
-                sg.popup('Recipient name cannot contain numbers!', title='', font=textFont, icon=BLANK_ICO)
+                sg.popup('Recipient name cannot contain numbers!', title='', font=textFont, icon=BLANK_ICO, keep_on_top=KEEP_ON_TOP)
             elif re.search('\D', values[NUMBER_INPUT]):
-                sg.popup('Number of lessons cannot contain characters!', title='', font=textFont, icon=BLANK_ICO)
+                sg.popup('Number of lessons cannot contain characters!', title='', font=textFont, icon=BLANK_ICO, keep_on_top=KEEP_ON_TOP)
             elif re.search('\D', str(values[COST_INPUT]).replace('.', '')):
-                sg.popup('Cost of lesson cannot contain characters!', title='', font=textFont, icon=BLANK_ICO)
+                sg.popup('Cost of lesson cannot contain characters!', title='', font=textFont, icon=BLANK_ICO,
+                keep_on_top=KEEP_ON_TOP)
             elif re.search('\d', values[STUDENT_INPUT]):
-                sg.popup('Students names cannot contain numbers!', title='', font=textFont, icon=BLANK_ICO)
+                sg.popup('Students names cannot contain numbers!', title='', font=textFont, icon=BLANK_ICO,keep_on_top=KEEP_ON_TOP)
             elif checkSelectFieldsAreNotEmpty(values):
-                sg.popup('All fields must be completed!', title='', font=textFont, icon=BLANK_ICO)
+                sg.popup('All fields must be completed!', title='', font=textFont, icon=BLANK_ICO, keep_on_top=KEEP_ON_TOP)
             else:
                 if (name in jsonData) and (isNewTemplate):
-                    sg.popup('Template with that name already exists!', title='', font=textFont, icon=BLANK_ICO)
+                    sg.popup('Template with that name already exists!', title='', font=textFont, icon=BLANK_ICO,keep_on_top=KEEP_ON_TOP)
                 else:
                     name = values[RECIPIENT_INPUT]
                     
@@ -230,6 +248,7 @@ def selectedTemplateWindow(isNewTemplate, name):
                         NUMBER_INPUT : values[NUMBER_INPUT],
                         COST_INPUT : '%.2f' % (round(float(values[COST_INPUT]), 2)),
                         INSTRUMENT_INPUT : values[INSTRUMENT_INPUT],
+                        DAY_INPUT: values[DAY_INPUT],
                         STUDENT_INPUT : values[STUDENT_INPUT]
                     }
                     
@@ -242,6 +261,8 @@ def selectedTemplateWindow(isNewTemplate, name):
                     break
             
     window.close()
+    
+    return name
 
 def mainWindow():
     with open(TEMPLATES_PATH, 'r') as f:
@@ -249,6 +270,8 @@ def mainWindow():
         namesList = list(jsonData.keys())
         namesList = sorted(namesList, key=str.lower)
         f.close()
+        
+    currentName = ''
     
     supportButtons = [
                         [
@@ -264,7 +287,7 @@ def mainWindow():
                 [
                     [
                         sg.Text('<Templates>', font=textFont),
-                        sg.Combo(namesList, enable_events=True, default_value="", pad=PADDING, key=NAMES_COMBOBOX, size=15, font=textFont, readonly=True),
+                        sg.Combo(namesList, enable_events=True, default_value=currentName, pad=PADDING, key=NAMES_COMBOBOX, size=15, font=textFont, readonly=True),
                         sg.Button(EDIT_BUTTON, font=textFont, disabled=True),
                         sg.Button('Subject', font=textFont, disabled=True),
                         sg.Button('Body', font=textFont, disabled=True)
@@ -278,7 +301,7 @@ def mainWindow():
                 ]
             ]
 
-    window = sg.Window('Invoice Templates', layout, element_justification='l', size=(MAIN_WIDTH, MAIN_HEIGHT), icon=MAIN_ICO)
+    window = sg.Window('Invoice Templates', layout, element_justification='l', size=(MAIN_WIDTH, MAIN_HEIGHT), icon=MAIN_ICO, keep_on_top=KEEP_ON_TOP)
     
     # Event Loop
     while True:
@@ -293,7 +316,7 @@ def mainWindow():
                 window['Body'].update(disabled=False)
                 window['DELETE'].update(disabled=False)
         if event == 'DELETE':
-            choice = sg.popup_yes_no('Are you sure you want to delete this template?', font=textFont)
+            choice = sg.popup_yes_no('Are you sure you want to delete this template?', font=textFont, keep_on_top=KEEP_ON_TOP)
             if choice == "Yes":
                 with open(TEMPLATES_PATH, 'r') as f:
                     jsonData = json.load(f)
@@ -316,8 +339,9 @@ def mainWindow():
              
         if event == EDIT_BUTTON:
             selectedTemplateWindow(False, values[NAMES_COMBOBOX])
+            
         if event == NEW_BUTTON:
-            selectedTemplateWindow(True, '')
+            name = selectedTemplateWindow(True, '')
             
             window[EDIT_BUTTON].update(disabled=True)
             window['Subject'].update(disabled=True)
@@ -330,11 +354,13 @@ def mainWindow():
                 namesList = sorted(namesList, key=str.lower)
                 
             window[NAMES_COMBOBOX].update(values=namesList)
+            values[NAMES_COMBOBOX] = name
+            
         if event == 'Subject':
             phrases = whichTerm(currentDate)
             
-            insturment = str(jsonData[values[NAMES_COMBOBOX]][INSTRUMENT_INPUT])
-            pyperclip.copy("""Invoice for """ + insturment + """ Lessons """ + str(phrases[1]))
+            instrument = str(jsonData[values[NAMES_COMBOBOX]][INSTRUMENT_INPUT])
+            pyperclip.copy("""Invoice for """ + instrument.title() + """ Lessons """ + str(phrases[PhraseType.SUBJECT]))
             
         if event == 'Body':
             name = str(values[NAMES_COMBOBOX])
@@ -348,11 +374,12 @@ def mainWindow():
             phrases = whichTerm(currentDate)
             print(phrases)
             
-            pyperclip.copy("""Hi """ + name +  """,
+            pyperclip.copy(
+"""Hi """ + name +  """,
 
-Here is my invoice for """ + students + """'s """ + instrument + """ lessons """ + str(phrases[0]) + """.
+Here is my invoice for """ + students + """'s """ + instrument + """ lessons """ + str(phrases[PhraseType.INVOICE]) + """.
 --------
-There are """ + numberOfLessons + """ sessions this """ + str(phrases[2]) + """.
+There are """ + numberOfLessons + """ sessions this """ + str(phrases[PhraseType.DATES]) + """.\n
 """ + numberOfLessons + """ x £""" + costOfLessons + """ = £""" + totalCost + """
 
 Thank you
@@ -360,27 +387,32 @@ Thank you
 
 Kind regards
 
-Robert""")
+Robert"""
+)    
+
         if event == 'Settings':
             settingsWindow()
 
     window.close()
 
+# Start of program
 if __name__ == "__main__":    
+    # Create templates file if it does not exist
     if (not os.path.isfile(TEMPLATES_PATH)):
         f = open(TEMPLATES_PATH, 'w')
         f.write('{}')
         f.close()
-        
+    
+    # Create settings file if it does not exist
     if (not os.path.isfile(SETTINGS_PATH)):
         f = open(SETTINGS_PATH, 'w')
         f.write('[Preferences]\n')
-        f.write('theme = DarkAmber')
+        f.write('Theme = ' + DEFAULT_THEME)
         f.close()
 
     config = ConfigParser()
     config.read(SETTINGS_PATH)
-    theme = config.get('Preferences', 'theme')
+    theme = config.get('Preferences', 'Theme')
         
     sg.theme(theme)
 
