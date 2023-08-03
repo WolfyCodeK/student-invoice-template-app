@@ -5,9 +5,9 @@ import re
 import pyperclip
 import datetime
 from configparser import ConfigParser
-from enum import Enum
+from enum import IntEnum
 
-class PhraseType(Enum):
+class PhraseType(IntEnum):
     INVOICE = 0
     SUBJECT = 1
     DATES = 2
@@ -28,7 +28,7 @@ day = int(sg.popup_get_text('DAY', size= 10, keep_on_top=KEEP_ON_TOP))
 currentDate = datetime.datetime(year, month, day)
 
 autumn1 = [datetime.datetime(2023, 9, 4), datetime.datetime(2023, 10, 21)]
-autumn2 = [datetime.datetime(2023, 9, 30), datetime.datetime(2023, 12, 23)]
+autumn2 = [datetime.datetime(2023, 10, 30), datetime.datetime(2023, 12, 23)]
 
 spring1 = [datetime.datetime(2024, 1, 8), datetime.datetime(2024, 2, 10)]
 spring2  = [datetime.datetime(2024, 2, 19), datetime.datetime(2024, 3, 30)]
@@ -48,7 +48,7 @@ SETTINGS_PATH = 'settings.ini'
 
 # Resource Paths
 BLANK_ICO = 'res\Blank.ico'
-MAIN_ICO = 'res\Moneybox.ico'
+MAIN_ICO = 'res\Email.ico'
 
 # Window Sizes
 MAIN_WIDTH = 600
@@ -82,37 +82,51 @@ INPUT_SIZE = 15
 
 instrumentsList = ['piano', 'drum', 'guitar', 'vocal', 'music', 'singing', 'bass guitar', 'classical guitar']
 
-def whichTerm(date):
+def getPhrases(startDate, endDate):
+    bodyPhrase = str(numToWeekday(startDate.isoweekday())) + ' ' + str(startDate.day) + 'th ' + str(numToMonth(startDate.month)) + ' to and including ' + str(numToWeekday(endDate.isoweekday())) + ' ' + str(endDate.day) + 'th ' + str(numToMonth(endDate.month))
+    currentTerm = ['1st half autumn term 2023', '1st Half Autumn Term 2023', bodyPhrase]
+    
+    return currentTerm
+
+def whichTerm(date, numberOfLessons, day):
     currentTerm = ['<DATE>', '<DATE>', '<DATE>']
-    if (date >= autumn1[0] and date <= autumn1[1]):
+    dateGap = datetime.timedelta(weeks=int(numberOfLessons))
         
-        bodyPhrase = str(numToWeekday(autumn1[0].isoweekday())) + ' ' + str(autumn1[0].day) + 'th ' + str(numToMonth(autumn1[0].month)) + ' to and including ' + str(numToWeekday(autumn1[1].isoweekday())) + ' ' + str(autumn1[1].day) + 'th ' + str(numToMonth(autumn1[1].month))
-        currentTerm = ['1st half autumn term 2023', '1st Half Autumn Term 2023', bodyPhrase]
+    if (date >= autumn1[0] and date <= autumn1[1]):
+        startDate = nextDayInWeek(autumn1[0], day)
+        endDate = startDate + dateGap
+        
+        currentTerm = getPhrases(startDate, endDate)
         
     elif (date >= autumn2[0] and date <= autumn2[1]):
+        startDate = nextDayInWeek(autumn2[0], day)
+        endDate = startDate + dateGap
         
-        bodyPhrase = str(numToWeekday(autumn2[0].isoweekday())) + ' ' + str(autumn2[0].day) + 'th ' + str(numToMonth(autumn2[0].month)) + ' to and including ' + str(numToWeekday(autumn2[1].isoweekday())) + ' ' + str(autumn2[1].day) + 'th ' + str(numToMonth(autumn2[1].month))
-        currentTerm = ['2nd half autumn term 2023', '2nd Half Autumn Term 2023', bodyPhrase]
+        currentTerm = getPhrases(startDate, endDate)
         
     elif (date >= spring1[0] and date <= spring1[1]):
+        startDate = nextDayInWeek(spring1[0], day)
+        endDate = startDate + dateGap
         
-        bodyPhrase = str(numToWeekday(spring1[0].isoweekday())) + ' ' + str(spring1[0].day) + 'th ' + str(numToMonth(spring1[0].month)) + ' to and including ' + str(numToWeekday(spring1[1].isoweekday())) + ' ' + str(spring1[1].day) + 'th ' + str(numToMonth(spring1[1].month))
-        currentTerm = ['1st half spring term 2023', '1st Half Spring Term 2023', bodyPhrase]
+        currentTerm = getPhrases(startDate, endDate)
         
     elif (date >= spring2[0] and date <= spring2[1]):
+        startDate = nextDayInWeek(spring2[0], day)
+        endDate = startDate + dateGap
         
-        bodyPhrase = str(numToWeekday(spring2[0].isoweekday())) + ' ' + str(spring2[0].day) + 'th ' + str(numToMonth(spring2[0].month)) + ' to and including ' + str(numToWeekday(spring2[1].isoweekday())) + ' ' + str(spring2[1].day) + 'th ' + str(numToMonth(spring2[1].month))
-        currentTerm = ['2nd half spring term 2023', '2nd Half Spring Term 2023', bodyPhrase]
+        currentTerm = getPhrases(startDate, endDate)
         
     elif (date >= summer1[0] and date <= summer1[1]):
+        startDate = nextDayInWeek(summer1[0], day)
+        endDate = startDate + dateGap
         
-        bodyPhrase = str(numToWeekday(summer1[0].isoweekday())) + ' ' + str(summer1[0].day) + 'th ' + str(numToMonth(summer1[0].month)) + ' to and including ' + str(numToWeekday(summer1[1].isoweekday())) + ' ' + str(summer1[1].day) + 'th ' + str(numToMonth(summer1[1].month))
-        currentTerm = ['1st half summer term 2023', '1st Half Summer Term 2023', bodyPhrase]
+        currentTerm = getPhrases(startDate, endDate)
         
     elif (date >= summer2[0] and date <= summer2[1]):
+        startDate = nextDayInWeek(summer2[0], day)
+        endDate = startDate + dateGap
         
-        bodyPhrase = str(numToWeekday(summer2[0].isoweekday())) + ' ' + str(summer2[0].day) + 'th ' + str(numToMonth(summer2[0].month)) + ' to and including ' + str(numToWeekday(summer2[1].isoweekday())) + ' ' + str(summer2[1].day) + 'th ' + str(numToMonth(summer2[1].month))
-        currentTerm = ['2nd half summer term 2023', '2nd Half Summer Term 2023', bodyPhrase]    
+        currentTerm = getPhrases(startDate, endDate) 
         
     return currentTerm
         
@@ -124,6 +138,18 @@ def numToWeekday(num):
 
 def numToMonth(num):
     return months[num-1]
+
+def nextDayInWeek(date, targetDay):
+    dayFound = False
+    searchDay = date
+    
+    while dayFound == False:
+        if (numToWeekday(searchDay.isoweekday()) == targetDay):
+            dayFound = True
+        else:
+            searchDay = searchDay + datetime.timedelta(days=1)
+        
+    return searchDay
 
 def settingsWindow():
     layout = [
@@ -357,21 +383,30 @@ def mainWindow():
             values[NAMES_COMBOBOX] = name
             
         if event == 'Subject':
-            phrases = whichTerm(currentDate)
+            with open(TEMPLATES_PATH, 'r') as f:
+                jsonData = json.load(f)
             
+            day = str(jsonData[values[NAMES_COMBOBOX]][DAY_INPUT])
+            print(day)
             instrument = str(jsonData[values[NAMES_COMBOBOX]][INSTRUMENT_INPUT])
+            phrases = whichTerm(currentDate, numberOfLessons, day)
+            
             pyperclip.copy("""Invoice for """ + instrument.title() + """ Lessons """ + str(phrases[PhraseType.SUBJECT]))
             
         if event == 'Body':
+            with open(TEMPLATES_PATH, 'r') as f:
+                jsonData = json.load(f)
+            
             name = str(values[NAMES_COMBOBOX])
             numberOfLessons = str(jsonData[values[NAMES_COMBOBOX]][NUMBER_INPUT])
             costOfLessons = str(jsonData[values[NAMES_COMBOBOX]][COST_INPUT])
             totalCost = str(int(numberOfLessons) * float(costOfLessons))
             totalCost = '%.2f' % (round(float(totalCost), 2))
             instrument = str(jsonData[values[NAMES_COMBOBOX]][INSTRUMENT_INPUT])
+            day = str(jsonData[values[NAMES_COMBOBOX]][DAY_INPUT])
             students = str(jsonData[values[NAMES_COMBOBOX]][STUDENT_INPUT])
             
-            phrases = whichTerm(currentDate)
+            phrases = whichTerm(currentDate, numberOfLessons, day)
             print(phrases)
             
             pyperclip.copy(
