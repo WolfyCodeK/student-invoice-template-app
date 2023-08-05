@@ -21,11 +21,15 @@ KEEP_ON_TOP = True
 
 # Term Dates
 today = datetime.datetime.now()
-#currentDate = today
+currentDate = today
+
+# Debug code for when out of term time
+"""
 year = int(sg.popup_get_text('YEAR', size= 10, keep_on_top=KEEP_ON_TOP))
 month = int(sg.popup_get_text('MONTH', size= 10, keep_on_top=KEEP_ON_TOP))
 day = int(sg.popup_get_text('DAY', size= 10, keep_on_top=KEEP_ON_TOP))
 currentDate = datetime.datetime(year, month, day)
+"""
 
 autumn1 = [datetime.datetime(2023, 9, 4), datetime.datetime(2023, 10, 21)]
 autumn2 = [datetime.datetime(2023, 10, 30), datetime.datetime(2023, 12, 23)]
@@ -420,7 +424,6 @@ Thank you
 --------
 
 Kind regards
-
 Robert"""
 )    
 
