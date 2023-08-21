@@ -44,7 +44,7 @@ weekdays = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 
 months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November','December']
 
 # Custom Fonts
-textFont = ('Space Mono', 12)
+textFont = ('Lucida Console', 13)
 
 # File Paths
 TEMPLATES_PATH = 'templates.json'
@@ -63,7 +63,8 @@ SETTINGS_WIDTH = 300
 SETTINGS_HEIGHT = 100
 
 # Element Sizes
-PADDING = 15
+MAIN_PADDING = 15
+SELECT_PADDING = 10
 
 # Button Values
 EDIT_BUTTON = 'Edit'
@@ -159,7 +160,7 @@ def settingsWindow():
     layout = [
                 [
                     sg.Text(THEME_COMBOBOX, font=textFont), 
-                    sg.Combo(themeList, font=textFont, size=INPUT_SIZE, readonly=True, key=THEME_COMBOBOX)
+                    sg.Combo(themeList, font=textFont, size=INPUT_SIZE, readonly=True, key=THEME_COMBOBOX, default_value=theme)
                 ],
                 [
                     sg.VPush()
@@ -213,23 +214,23 @@ def selectedTemplateWindow(isNewTemplate, name):
     
     layout = [
                 [
-                    sg.Text('Recipient', font=textFont), 
-                    sg.Input(size=INPUT_SIZE*2, font=textFont, key=RECIPIENT_INPUT, default_text=recipientDefault, disabled=recipientDisabled, disabled_readonly_background_color='DarkRed')
+                    sg.Text('Recipient', font=textFont, pad=SELECT_PADDING), 
+                    sg.Input(size=INPUT_SIZE*2, font=textFont, key=RECIPIENT_INPUT, default_text=recipientDefault, disabled=recipientDisabled, disabled_readonly_background_color='#FF6961')
                 ],
                 [
-                    sg.Text('Number of lessons', font=textFont), 
+                    sg.Text('Number of lessons', font=textFont, pad=SELECT_PADDING), 
                     sg.Input(size=INPUT_SIZE, font=textFont, key=NUMBER_INPUT, default_text=numberDefault)
                 ],
                 [
-                    sg.Text('Cost of lesson  £', font=textFont), 
+                    sg.Text('Cost of lesson  £', font=textFont, pad=SELECT_PADDING), 
                     sg.Input(size=INPUT_SIZE, font=textFont, key=COST_INPUT, default_text=costDefault)
                 ],
-                [   sg.Text('Instrument', font=textFont), 
+                [   sg.Text('Instrument', font=textFont, pad=SELECT_PADDING), 
                     sg.Combo(values=sorted(instrumentsList), size=INPUT_SIZE*2,
                     font=textFont, key=INSTRUMENT_INPUT, default_value=instrumentDefault, readonly=True)
                 ],
                 [
-                    sg.Text('Start Day', font=textFont),
+                    sg.Text('Start Day', font=textFont, pad=SELECT_PADDING),
                     sg.Combo(values=weekdays, size=INPUT_SIZE, font=textFont, key=DAY_INPUT, default_value=dayDefault, readonly=True)
                 ],
                 [   
@@ -317,7 +318,7 @@ def mainWindow():
                 [
                     [
                         sg.Text('<Templates>', font=textFont),
-                        sg.Combo(namesList, enable_events=True, default_value=currentName, pad=PADDING, key=NAMES_COMBOBOX, size=15, font=textFont, readonly=True),
+                        sg.Combo(namesList, enable_events=True, default_value=currentName, pad=MAIN_PADDING, key=NAMES_COMBOBOX, size=15, font=textFont, readonly=True),
                         sg.Button(EDIT_BUTTON, font=textFont, disabled=True),
                         sg.Button('Subject', font=textFont, disabled=True),
                         sg.Button('Body', font=textFont, disabled=True)
