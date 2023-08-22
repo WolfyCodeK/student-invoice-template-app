@@ -359,7 +359,7 @@ def mainWindow():
                 window['Body'].update(disabled=False)
                 window['DELETE'].update(disabled=False)
         if event == 'DELETE':
-            choice = sg.popup_yes_no('Are you sure you want to delete this template?', font=textFont, keep_on_top=KEEP_ON_TOP)
+            choice = sg.popup_yes_no('Are you sure you want to delete this template?', title='', font=textFont, icon=BLANK_ICO, keep_on_top=KEEP_ON_TOP)
             if choice == "Yes":
                 with open(TEMPLATES_PATH, 'r') as f:
                     jsonData = json.load(f)
