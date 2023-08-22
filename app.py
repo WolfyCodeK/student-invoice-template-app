@@ -50,10 +50,6 @@ textFont = ('Lucida Console', 13)
 TEMPLATES_PATH = 'templates.json'
 SETTINGS_PATH = 'settings.ini'
 
-# Create config parser
-config = ConfigParser()
-config.read(SETTINGS_PATH)
-
 # Resource Paths
 BLANK_ICO = 'res\Blank.ico'
 MAIN_ICO = 'res\Email.ico'
@@ -459,6 +455,10 @@ if __name__ == "__main__":
         f.write('[Preferences]\n')
         f.write('Theme = ' + DEFAULT_THEME)
         f.close()
+    
+    # Create config parser
+    config = ConfigParser()
+    config.read(SETTINGS_PATH)
         
     # Get theme being used
     theme = config.get('Preferences', 'Theme')    
