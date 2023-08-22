@@ -50,6 +50,10 @@ textFont = ('Lucida Console', 13)
 TEMPLATES_PATH = 'templates.json'
 SETTINGS_PATH = 'settings.ini'
 
+# Create config parser
+config = ConfigParser()
+config.read(SETTINGS_PATH)
+
 # Resource Paths
 BLANK_ICO = 'res\Blank.ico'
 MAIN_ICO = 'res\Email.ico'
@@ -59,7 +63,7 @@ MAIN_WIDTH = 600
 MAIN_HEIGHT = 225
 SELECT_WIDTH = 350
 SELECT_HEIGHT = 350
-SETTINGS_WIDTH = 300
+SETTINGS_WIDTH = 475
 SETTINGS_HEIGHT = 100
 
 # Element Sizes
@@ -84,6 +88,7 @@ INSTRUMENT_INPUT = 'Instrument'
 DAY_INPUT = 'Day'
 STUDENT_INPUT = 'Student'
 INPUT_SIZE = 15
+THEME_INPUT_SIZE = 21
 
 instrumentsList = ['piano', 'drum', 'guitar', 'vocal', 'music', 'singing', 'bass guitar', 'classical guitar']
 
@@ -144,7 +149,7 @@ def numToWeekday(num):
 def numToMonth(num):
     return months[num-1]
 
-def nextDayInWeek(date, targetDay):
+def nextDayInWeek(date, targetDay):    
     dayFound = False
     searchDay = date
     
@@ -157,10 +162,14 @@ def nextDayInWeek(date, targetDay):
     return searchDay
 
 def settingsWindow():
+    # Bad fix, ideally will switch over to classes to prevent this
+    global theme
+    
     layout = [
                 [
                     sg.Text(THEME_COMBOBOX, font=textFont), 
-                    sg.Combo(themeList, font=textFont, size=INPUT_SIZE, readonly=True, key=THEME_COMBOBOX, default_value=theme)
+                    sg.Combo(themeList, font=textFont, size=THEME_INPUT_SIZE, readonly=True, key=THEME_COMBOBOX, default_value=theme),
+                    sg.Button('Randomise', font=textFont)
                 ],
                 [
                     sg.VPush()
@@ -172,21 +181,24 @@ def settingsWindow():
                 ]
         ]
     
-    window = sg.Window('', layout, element_justification='c', size=(SELECT_WIDTH, SETTINGS_HEIGHT), modal=True, icon=BLANK_ICO, keep_on_top=KEEP_ON_TOP)
+    window = sg.Window('', layout, element_justification='c', size=(SETTINGS_WIDTH, SETTINGS_HEIGHT), modal=True, icon=BLANK_ICO, keep_on_top=KEEP_ON_TOP)
     
     # Event Loop
     while True:
         event, values = window.read()
         if event == EXIT_BUTTON or event == sg.WIN_CLOSED:
             break
+        if event == 'Randomise':
+            window[THEME_COMBOBOX].update(value='')
+            theme = ''
         if event == SAVE_BUTTON:
-            config = ConfigParser()
-            config.read(SETTINGS_PATH)
-            config.set('Preferences', 'theme', values[THEME_COMBOBOX])
+            theme = values[THEME_COMBOBOX]
+
+            config.set('Preferences', 'Theme', theme)
             
             with open(SETTINGS_PATH, 'w') as configfile:
                 config.write(configfile)
-        break
+            break
         
     window.close()
 
@@ -447,10 +459,9 @@ if __name__ == "__main__":
         f.write('[Preferences]\n')
         f.write('Theme = ' + DEFAULT_THEME)
         f.close()
-
-    config = ConfigParser()
-    config.read(SETTINGS_PATH)
-    theme = config.get('Preferences', 'Theme')
+        
+    # Get theme being used
+    theme = config.get('Preferences', 'Theme')    
         
     sg.theme(theme)
 
