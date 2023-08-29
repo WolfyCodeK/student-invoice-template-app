@@ -4,3 +4,6 @@ app.spec
 settings.ini
 templates.json
 release
+token.json
+__pycache__/
+gmailAPI.py

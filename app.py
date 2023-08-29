@@ -6,6 +6,7 @@ import pyperclip
 import datetime
 from configparser import ConfigParser
 from enum import IntEnum
+from gmailAPI import gmail_create_draft
 
 class PhraseType(IntEnum):
     INVOICE = 0
@@ -60,11 +61,12 @@ MAIN_HEIGHT = 225
 SELECT_WIDTH = 350
 SELECT_HEIGHT = 350
 SETTINGS_WIDTH = 475
-SETTINGS_HEIGHT = 100
+SETTINGS_HEIGHT = 150
 
 # Element Sizes
 MAIN_PADDING = 15
 SELECT_PADDING = 10
+SETTINGS_PADDING = 10
 
 # Button Values
 EDIT_BUTTON = 'Edit'
@@ -160,12 +162,17 @@ def nextDayInWeek(date, targetDay):
 def settingsWindow():
     # Bad fix, ideally will switch over to classes to prevent this
     global theme
+    global emailMode
     
     layout = [
                 [
-                    sg.Text(THEME_COMBOBOX, font=textFont), 
+                    sg.Text(THEME_COMBOBOX, font=textFont, pad=SETTINGS_PADDING), 
                     sg.Combo(themeList, font=textFont, size=THEME_INPUT_SIZE, readonly=True, key=THEME_COMBOBOX, default_value=theme),
                     sg.Button('Randomise', font=textFont)
+                ],
+                [
+                    sg.Text('<Email Mode>', font=textFont, pad=SETTINGS_PADDING), 
+                    sg.Combo(['Clipboard', 'Auto Draft'], font=textFont, size=THEME_INPUT_SIZE, readonly=True, key='Email Mode', default_value=emailMode),
                 ],
                 [
                     sg.VPush()
@@ -177,7 +184,7 @@ def settingsWindow():
                 ]
         ]
     
-    window = sg.Window('', layout, element_justification='c', size=(SETTINGS_WIDTH, SETTINGS_HEIGHT), modal=True, icon=BLANK_ICO, keep_on_top=KEEP_ON_TOP)
+    window = sg.Window('', layout, element_justification='l', size=(SETTINGS_WIDTH, SETTINGS_HEIGHT), modal=True, icon=BLANK_ICO, keep_on_top=KEEP_ON_TOP)
     
     # Event Loop
     while True:
@@ -189,8 +196,10 @@ def settingsWindow():
             theme = ''
         if event == SAVE_BUTTON:
             theme = values[THEME_COMBOBOX]
+            emailMode = values['Email Mode']
 
             config.set('Preferences', 'Theme', theme)
+            config.set('Preferences', 'Email-Mode', emailMode)
             
             with open(SETTINGS_PATH, 'w') as configfile:
                 config.write(configfile)
@@ -310,7 +319,18 @@ def mainWindow():
         namesList = sorted(namesList, key=str.lower)
         f.close()
         
-    currentName = ''
+    currentName = '' 
+    
+    # Once again global is bad, should change to classes
+    global emailMode
+    global emailRecipient
+    
+    if (emailMode == 'Clipboard'):
+        subBodyEnabled = True
+        draftEnabled = False
+    else:
+        draftEnabled = True
+        subBodyEnabled = False
     
     supportButtons = [
                         [
@@ -328,9 +348,14 @@ def mainWindow():
                         sg.Text('<Templates>', font=textFont),
                         sg.Combo(namesList, enable_events=True, default_value=currentName, pad=MAIN_PADDING, key=NAMES_COMBOBOX, size=15, font=textFont, readonly=True),
                         sg.Button(EDIT_BUTTON, font=textFont, disabled=True),
-                        sg.Button('Subject', font=textFont, disabled=True),
-                        sg.Button('Body', font=textFont, disabled=True)
+                        sg.Button('Draft', font=textFont, disabled=True, visible=draftEnabled),
+                        sg.Button('Subject', font=textFont, disabled=True, visible=subBodyEnabled),
+                        sg.Button('Body', font=textFont, disabled=True, visible=subBodyEnabled)
                     ]
+                ],
+                [
+                    sg.Text('<Email Recipient>', font=textFont, visible=draftEnabled, key='EmailRecipient'),
+                    sg.Input(size=35, font=textFont, key='EmailInput', default_text=emailRecipient, visible=draftEnabled)
                 ],
                 [
                     sg.VPush()
@@ -345,12 +370,18 @@ def mainWindow():
     # Event Loop
     while True:
         event, values = window.read()
+        
         if event == sg.WIN_CLOSED or event == EXIT_BUTTON:
+            config.set('Preferences', 'Email-Recipient', window['EmailInput'].get())
+            
+            with open(SETTINGS_PATH, 'w') as configfile:
+                config.write(configfile)
             break
         if event == NAMES_COMBOBOX:
             if (not values[NAMES_COMBOBOX] == ''):
                 
                 window[EDIT_BUTTON].update(disabled=False)
+                window['Draft'].update(disabled=False)
                 window['Subject'].update(disabled=False)
                 window['Body'].update(disabled=False)
                 window['DELETE'].update(disabled=False)
@@ -372,6 +403,7 @@ def mainWindow():
                     f.close()          
                     
                 window[EDIT_BUTTON].update(disabled=True)
+                window['Draft'].update(disabled=True)
                 window['Subject'].update(disabled=True)
                 window['Body'].update(disabled=True)
                 window['DELETE'].update(disabled=True)
@@ -383,6 +415,7 @@ def mainWindow():
             name = selectedTemplateWindow(True, '')
             
             window[EDIT_BUTTON].update(disabled=True)
+            window['Draft'].update(disabled=True)
             window['Subject'].update(disabled=True)
             window['Body'].update(disabled=True)
             window['DELETE'].update(disabled=True)
@@ -394,6 +427,51 @@ def mainWindow():
                 
             window[NAMES_COMBOBOX].update(values=namesList)
             values[NAMES_COMBOBOX] = name
+            
+        if event == 'Draft':
+            # Subject
+            with open(TEMPLATES_PATH, 'r') as f:
+                jsonData = json.load(f)
+            
+            day = str(jsonData[values[NAMES_COMBOBOX]][DAY_INPUT])
+            numberOfLessons = str(jsonData[values[NAMES_COMBOBOX]][NUMBER_INPUT])
+            instrument = str(jsonData[values[NAMES_COMBOBOX]][INSTRUMENT_INPUT])
+            phrases = whichTerm(currentDate, numberOfLessons, day)
+            
+            subjectText = ("""Invoice for """ + instrument.title() + """ Lessons """ + str(phrases[PhraseType.SUBJECT]))
+            
+            
+            # Body
+            with open(TEMPLATES_PATH, 'r') as f:
+                jsonData = json.load(f)
+            
+            name = str(values[NAMES_COMBOBOX])
+            numberOfLessons = str(jsonData[values[NAMES_COMBOBOX]][NUMBER_INPUT])
+            costOfLessons = str(jsonData[values[NAMES_COMBOBOX]][COST_INPUT])
+            totalCost = str(int(numberOfLessons) * float(costOfLessons))
+            totalCost = '%.2f' % (round(float(totalCost), 2))
+            instrument = str(jsonData[values[NAMES_COMBOBOX]][INSTRUMENT_INPUT])
+            day = str(jsonData[values[NAMES_COMBOBOX]][DAY_INPUT])
+            students = str(jsonData[values[NAMES_COMBOBOX]][STUDENT_INPUT])
+            
+            phrases = whichTerm(currentDate, numberOfLessons, day)
+        
+            bodyText =(
+"""Hi """ + name +  """,
+
+Here is my invoice for """ + students + """'s """ + instrument + """ lessons """ + str(phrases[PhraseType.INVOICE]) + """.
+--------
+There are """ + numberOfLessons + """ sessions this """ + str(phrases[PhraseType.DATES]) + """.\n
+""" + numberOfLessons + """ x £""" + costOfLessons + """ = £""" + totalCost + """
+
+Thank you
+--------
+
+Kind regards
+Robert""")
+            
+            # Send Email
+            gmail_create_draft(emailRecipient, subjectText, bodyText)
             
         if event == 'Subject':
             with open(TEMPLATES_PATH, 'r') as f:
@@ -438,6 +516,19 @@ Robert"""
 
         if event == 'Settings':
             settingsWindow()
+            
+            if (emailMode == 'Clipboard'):
+                window['Draft'].update(visible=False)
+                window['Subject'].update(visible=True)
+                window['Body'].update(visible=True)
+                window['EmailRecipient'].update(visible=False)
+                window['EmailInput'].update(visible=False)
+            else:
+                window['Draft'].update(visible=True)
+                window['Subject'].update(visible=False)
+                window['Body'].update(visible=False)
+                window['EmailRecipient'].update(visible=True)
+                window['EmailInput'].update(visible=True)
 
     window.close()
 
@@ -445,23 +536,25 @@ Robert"""
 if __name__ == "__main__":    
     # Create templates file if it does not exist
     if (not os.path.isfile(TEMPLATES_PATH)):
-        f = open(TEMPLATES_PATH, 'w')
-        f.write('{}')
-        f.close()
+        with open(TEMPLATES_PATH, 'w') as f:
+            f.write('{}')
     
     # Create settings file if it does not exist
     if (not os.path.isfile(SETTINGS_PATH)):
-        f = open(SETTINGS_PATH, 'w')
-        f.write('[Preferences]\n')
-        f.write('Theme = ' + DEFAULT_THEME)
-        f.close()
+        with open(SETTINGS_PATH, 'w') as f:
+            f.write('[Preferences]\n')
+            f.write('Theme = ' + DEFAULT_THEME + '\n')
+            f.write('Email-Mode = Clipboard\n')
+            f.write('Email-Recipient = example@gmail.com')
     
     # Create config parser
     config = ConfigParser()
     config.read(SETTINGS_PATH)
         
     # Get theme being used
-    theme = config.get('Preferences', 'Theme')    
+    theme = config.get('Preferences', 'Theme')
+    emailMode = config.get('Preferences', 'Email-Mode')
+    emailRecipient = config.get('Preferences', 'Email-Recipient')     
         
     sg.theme(theme)
 
