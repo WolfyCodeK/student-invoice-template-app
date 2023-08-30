@@ -1,4 +1,4 @@
-app.spec
+
 settings.ini
 templates.json
 token.json
@@ -6,3 +6,7 @@ __pycache__/
 todo.txt
 output
 credentials.json
+env
+build
+dist
+StudentInvoice-0.2.0.spec
