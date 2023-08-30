@@ -1,9 +1,8 @@
-build
-dist
 app.spec
 settings.ini
 templates.json
-release
 token.json
 __pycache__/
-gmailAPI.py
+todo.txt
+output
+credentials.json
