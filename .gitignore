@@ -1,4 +1,3 @@
-
 settings.ini
 templates.json
 token.json
@@ -9,4 +8,6 @@ credentials.json
 env
 build
 dist
-StudentInvoice-0.2.0.spec
+*.spec
+key.key
+lib

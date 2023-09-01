@@ -473,6 +473,8 @@ Robert""")
             # Send Email
             gmail_create_draft(emailRecipient, subjectText, bodyText)
             
+            sg.popup_quick_message('Draft Sent!', font=textFont, title='', icon=BLANK_ICO, keep_on_top=KEEP_ON_TOP, background_color="Black", text_color="White")
+            
         if event == 'Subject':
             with open(TEMPLATES_PATH, 'r') as f:
                 jsonData = json.load(f)
