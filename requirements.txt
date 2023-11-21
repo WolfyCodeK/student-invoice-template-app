@@ -1,4 +1,4 @@
-cryptography==41.0.2
+cryptography==41.0.4
 google_api_python_client==1.8.0
 google_auth_oauthlib==1.0.0
 protobuf==3.20.3
