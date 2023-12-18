@@ -27,10 +27,10 @@ class InvoiceApp:
     currentDate = today
 
     # Debug code for when out of term time
-    year = int(sg.popup_get_text('YEAR', size= 10, keep_on_top=KEEP_ON_TOP))
-    month = int(sg.popup_get_text('MONTH', size= 10, keep_on_top=KEEP_ON_TOP))
-    day = int(sg.popup_get_text('DAY', size= 10, keep_on_top=KEEP_ON_TOP))
-    currentDate = datetime(year, month, day)
+    # year = int(sg.popup_get_text('YEAR', size= 10, keep_on_top=KEEP_ON_TOP))
+    # month = int(sg.popup_get_text('MONTH', size= 10, keep_on_top=KEEP_ON_TOP))
+    # day = int(sg.popup_get_text('DAY', size= 10, keep_on_top=KEEP_ON_TOP))
+    # currentDate = datetime(year, month, day)
 
     autumn1 = [datetime(2023, 9, 4), datetime(2023, 10, 21)]
     autumn2 = [datetime(2023, 10, 30), datetime(2023, 12, 23)]
@@ -162,7 +162,7 @@ class InvoiceApp:
         monday1 = (startDate - timedelta(days=startDate.weekday()))
         monday2 = (endDate - timedelta(days=endDate.weekday()))   
         
-        return timedelta(weeks=((monday2 - monday1).days / 7))
+        return timedelta(weeks=(((monday2 - monday1).days / 7) + 1))
 
     def whichTerm(self, date: datetime, day: str) -> tuple:
         currentTerm = ['<DATE>', '<DATE>', '<DATE>'] 
