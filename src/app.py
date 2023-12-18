@@ -73,6 +73,14 @@ class InvoiceApp:
     EXIT_BUTTON = 'Exit'
     NEW_BUTTON = 'New Template'
     SAVE_BUTTON = 'Save & Close'
+    DELETE_BUTTON = 'DELETE'
+    DRAFT_BUTTON = 'Draft'
+    DRAFT_ALL_BUTTON = 'Draft All'
+    BODY_BUTTON = 'Body'
+    SUBJECT_BUTTON = 'Subject'
+    SETTINGS_BUTTON = 'Settings'
+    
+    templateEditButtonsList = [DELETE_BUTTON, DRAFT_BUTTON, DRAFT_ALL_BUTTON, BODY_BUTTON, SUBJECT_BUTTON, EDIT_BUTTON]
 
     # Email Modes
     CLIPBOARD = 'Clipboard'
@@ -214,6 +222,52 @@ class InvoiceApp:
             
         return searchDay
 
+    def toggleButtonsDisabled(self, window: sg.Window, buttonList: str, disabled: bool):
+        for button in buttonList:
+            window[button].update(disabled=disabled)
+
+    def getNamesList(self):
+        with open(self.TEMPLATES_PATH, 'r') as f:
+            jsonData = json.load(f)
+            namesList = list(jsonData.keys())
+            namesList = sorted(namesList, key=str.lower)
+            f.close()
+            
+        return namesList
+
+    def getSubject(self, values: dict) -> str:
+        with open(self.TEMPLATES_PATH, 'r') as f:
+                    jsonData = json.load(f)
+         
+        day = str(jsonData[values[self.NAMES_COMBOBOX]][self.DAY_INPUT])
+        numberOfLessons = str(jsonData[values[self.NAMES_COMBOBOX]][self.NUMBER_INPUT])
+        instrument = str(jsonData[values[self.NAMES_COMBOBOX]][self.INSTRUMENT_INPUT])
+        phrases = self.whichTerm(self.currentDate, numberOfLessons, day)
+        
+        return f"Invoice for {instrument.title()} Lessons {phrases[PhraseType.SUBJECT]}"
+    
+    def getBody(self, values: dict) -> str:
+        with open(self.TEMPLATES_PATH, 'r') as f:
+            jsonData = json.load(f)
+        
+        name = values[self.NAMES_COMBOBOX]
+        numberOfLessons = jsonData[values[self.NAMES_COMBOBOX]][self.NUMBER_INPUT]
+        costOfLessons = jsonData[values[self.NAMES_COMBOBOX]][self.COST_INPUT]
+        totalCost = int(numberOfLessons) * float(costOfLessons)
+        totalCost = '%.2f' % (round(float(totalCost), 2))
+        instrument = jsonData[values[self.NAMES_COMBOBOX]][self.INSTRUMENT_INPUT]
+        day = jsonData[values[self.NAMES_COMBOBOX]][self.DAY_INPUT]
+        students = jsonData[values[self.NAMES_COMBOBOX]][self.STUDENT_INPUT]
+        
+        phrases = self.whichTerm(self.currentDate, numberOfLessons, day)
+    
+        numberOfLessonsPhrase = f"There are {numberOfLessons} sessions"
+        
+        if int(numberOfLessons) == 1:
+            numberOfLessonsPhrase = f"There is {numberOfLessons} session"
+    
+        return f"Hi {name},\n\nHere is my invoice for {students}'s {instrument} lessons {phrases[PhraseType.INVOICE]}.\n--------\n{numberOfLessonsPhrase} this {phrases[PhraseType.INVOICE]} from {phrases[PhraseType.DATES]}.\n\n{numberOfLessons} x £{costOfLessons} = £{totalCost}\n\nThank you\n--------\n\nKind regards\nRobert"
+
     def settingsWindow(self):        
         layout = [
                     [
@@ -271,7 +325,7 @@ class InvoiceApp:
         dayDefault = ''
         studentDefault = ''
         
-        if (isNewTemplate == False):
+        if not isNewTemplate:
             recipientDefault = name
             recipientDisabled = True
             numberDefault = jsonData[name][self.NUMBER_INPUT]
@@ -364,11 +418,7 @@ class InvoiceApp:
         return name
 
     def mainWindow(self):
-        with open(self.TEMPLATES_PATH, 'r') as f:
-            jsonData = json.load(f)
-            namesList = list(jsonData.keys())
-            namesList = sorted(namesList, key=str.lower)
-            f.close()
+        namesList = self.getNamesList()
         
         if (self.getEmailMode() == self.CLIPBOARD):
             subBodyEnabled = True
@@ -386,10 +436,10 @@ class InvoiceApp:
         
         supportButtons = [
                             [
-                                sg.Button('DELETE', font=self.textFont, disabled=supportButtonsDisabled),
+                                sg.Button(self.DELETE_BUTTON, font=self.textFont, disabled=supportButtonsDisabled),
                                 sg.Push(),
                                 sg.Button(self.NEW_BUTTON, font=self.textFont), 
-                                sg.Button('Settings', font=self.textFont),
+                                sg.Button(self.SETTINGS_BUTTON, font=self.textFont),
                                 sg.Button(self.EXIT_BUTTON, font=self.textFont)
                             ]       
                         ]
@@ -400,9 +450,10 @@ class InvoiceApp:
                             sg.Text('<Templates>', font=self.textFont),
                             sg.Combo(namesList, enable_events=True, default_value=currentTemplate, pad=self.MAIN_PADDING, key=self.NAMES_COMBOBOX, size=15, font=self.textFont, readonly=True),
                             sg.Button(self.EDIT_BUTTON, font=self.textFont, disabled=supportButtonsDisabled),
-                            sg.Button('Draft', font=self.textFont, disabled=supportButtonsDisabled, visible=draftEnabled),
-                            sg.Button('Subject', font=self.textFont, disabled=supportButtonsDisabled, visible=subBodyEnabled),
-                            sg.Button('Body', font=self.textFont, disabled=supportButtonsDisabled, visible=subBodyEnabled)
+                            sg.Button(self.DRAFT_BUTTON, font=self.textFont, disabled=supportButtonsDisabled, visible=draftEnabled),
+                            sg.Button(self.DRAFT_ALL_BUTTON, font=self.textFont, disabled=supportButtonsDisabled, visible=draftEnabled),
+                            sg.Button(self.SUBJECT_BUTTON, font=self.textFont, disabled=supportButtonsDisabled, visible=subBodyEnabled),
+                            sg.Button(self.BODY_BUTTON, font=self.textFont, disabled=supportButtonsDisabled, visible=subBodyEnabled)
                         ]
                     ],
                     [
@@ -434,12 +485,8 @@ class InvoiceApp:
             if event == self.NAMES_COMBOBOX:
                 if (not values[self.NAMES_COMBOBOX] == ''):
                     
-                    window[self.EDIT_BUTTON].update(disabled=False)
-                    window['Draft'].update(disabled=False)
-                    window['Subject'].update(disabled=False)
-                    window['Body'].update(disabled=False)
-                    window['DELETE'].update(disabled=False)
-            if event == 'DELETE':
+                    self.toggleButtonsDisabled(window, self.templateEditButtonsList, False)
+            if event == self.DELETE_BUTTON:
                 choice = sg.popup_yes_no('Are you sure you want to delete this template?', title='', font=self.textFont, icon=self.BLANK_ICO, keep_on_top=self.KEEP_ON_TOP)
                 if choice == "Yes":
                     with open(self.TEMPLATES_PATH, 'r') as f:
@@ -456,11 +503,7 @@ class InvoiceApp:
                         f.write(json.dumps(jsonData))   
                         f.close()          
                         
-                    window[self.EDIT_BUTTON].update(disabled=True)
-                    window['Draft'].update(disabled=True)
-                    window['Subject'].update(disabled=True)
-                    window['Body'].update(disabled=True)
-                    window['DELETE'].update(disabled=True)
+                    self.toggleButtonsDisabled(window, self.templateEditButtonsList, True)
                 
             if event == self.EDIT_BUTTON:
                 self.selectedTemplateWindow(False, values[self.NAMES_COMBOBOX])
@@ -475,80 +518,24 @@ class InvoiceApp:
                     
                 window[self.NAMES_COMBOBOX].update(value=name, values=namesList)
                 
-            if event == 'Draft':
-                # Subject
-                with open(self.TEMPLATES_PATH, 'r') as f:
-                    jsonData = json.load(f)
-                
-                day = jsonData[values[self.NAMES_COMBOBOX]][self.DAY_INPUT]
-                numberOfLessons = jsonData[values[self.NAMES_COMBOBOX]][self.NUMBER_INPUT]
-                instrument = jsonData[values[self.NAMES_COMBOBOX]][self.INSTRUMENT_INPUT]
-                phrases = self.whichTerm(self.currentDate, numberOfLessons, day)
-                
-                subjectText = f"Invoice for {instrument.title()} Lessons {phrases[PhraseType.SUBJECT]}"
-                
-                
-                # Body
-                with open(self.TEMPLATES_PATH, 'r') as f:
-                    jsonData = json.load(f)
-                
-                name = values[self.NAMES_COMBOBOX]
-                numberOfLessons = jsonData[values[self.NAMES_COMBOBOX]][self.NUMBER_INPUT]
-                costOfLessons = jsonData[values[self.NAMES_COMBOBOX]][self.COST_INPUT]
-                totalCost = int(numberOfLessons) * float(costOfLessons)
-                totalCost = '%.2f' % (round(float(totalCost), 2))
-                instrument = jsonData[values[self.NAMES_COMBOBOX]][self.INSTRUMENT_INPUT]
-                day = jsonData[values[self.NAMES_COMBOBOX]][self.DAY_INPUT]
-                students = jsonData[values[self.NAMES_COMBOBOX]][self.STUDENT_INPUT]
-                
-                phrases = self.whichTerm(self.currentDate, numberOfLessons, day)
-            
-                numberOfLessonsPhrase = f"There are {numberOfLessons} sessions"
-                
-                if int(numberOfLessons) == 1:
-                    numberOfLessonsPhrase = f"There is {numberOfLessons} session"
-            
-                bodyText = f"Hi {name},\n\nHere is my invoice for {students}'s {instrument} lessons {phrases[PhraseType.INVOICE]}.\n--------\n{numberOfLessonsPhrase} this {phrases[PhraseType.INVOICE]} from {phrases[PhraseType.DATES]}.\n\n{numberOfLessons} x £{costOfLessons} = £{totalCost}\n\nThank you\n--------\n\nKind regards\nRobert"
-                
-                # Send Email
-                gmail_create_draft(self.getEmailRecipient(), subjectText, bodyText)
+            if event == self.DRAFT_BUTTON:
+                gmail_create_draft(self.getEmailRecipient(), self.getSubject(values), self.getBody(values))
                 
                 sg.popup_quick_message('Draft Sent!', font=self.textFont, title='', icon=self.BLANK_ICO, keep_on_top=self.KEEP_ON_TOP, background_color="Black", text_color="White")
                 
-            if event == 'Subject':
-                with open(self.TEMPLATES_PATH, 'r') as f:
-                    jsonData = json.load(f)
+            if event == self.DRAFT_ALL_BUTTON:
+                for name in self.getNamesList():
+                    gmail_create_draft(self.getEmailRecipient(), self.getSubject(values), self.getBody(values))
                 
-                day = str(jsonData[values[self.NAMES_COMBOBOX]][self.DAY_INPUT])
-                numberOfLessons = str(jsonData[values[self.NAMES_COMBOBOX]][self.NUMBER_INPUT])
-                instrument = str(jsonData[values[self.NAMES_COMBOBOX]][self.INSTRUMENT_INPUT])
-                phrases = self.whichTerm(self.currentDate, numberOfLessons, day)
+                sg.popup_quick_message('All Drafts Sent!', font=self.textFont, title='', icon=self.BLANK_ICO, keep_on_top=self.KEEP_ON_TOP, background_color="Black", text_color="White")
                 
-                pyperclip.copy("""Invoice for """ + instrument.title() + """ Lessons """ + str(phrases[PhraseType.SUBJECT]))
+            if event == self.SUBJECT_BUTTON:
+                pyperclip.copy(self.getSubject(values))
                 
-            if event == 'Body':
-                with open(self.TEMPLATES_PATH, 'r') as f:
-                    jsonData = json.load(f)
-                
-                name = values[self.NAMES_COMBOBOX]
-                numberOfLessons = jsonData[values[self.NAMES_COMBOBOX]][self.NUMBER_INPUT]
-                costOfLessons = jsonData[values[self.NAMES_COMBOBOX]][self.COST_INPUT]
-                totalCost = int(numberOfLessons) * float(costOfLessons)
-                totalCost = '%.2f' % (round(float(totalCost), 2))
-                instrument = jsonData[values[self.NAMES_COMBOBOX]][self.INSTRUMENT_INPUT]
-                day = jsonData[values[self.NAMES_COMBOBOX]][self.DAY_INPUT]
-                students = jsonData[values[self.NAMES_COMBOBOX]][self.STUDENT_INPUT]
-                
-                phrases = self.whichTerm(self.currentDate, numberOfLessons, day)
-            
-                numberOfLessonsPhrase = f"There are {numberOfLessons} sessions"
-                
-                if int(numberOfLessons) == 1:
-                    numberOfLessonsPhrase = f"There is {numberOfLessons} session"
-            
-                pyperclip.copy(f"Hi {name},\n\nHere is my invoice for {students}'s {instrument} lessons {phrases[PhraseType.INVOICE]}.\n--------\n{numberOfLessonsPhrase} this {phrases[PhraseType.INVOICE]} from {phrases[PhraseType.DATES]}.\n\n{numberOfLessons} x £{costOfLessons} = £{totalCost}\n\nThank you\n--------\n\nKind regards\nRobert")
+            if event == self.BODY_BUTTON:
+                pyperclip.copy(self.getBody(values))
 
-            if event == 'Settings':
+            if event == self.SETTINGS_BUTTON:
                 self.settingsWindow()
                 
                 sg.theme(self.getTheme())
@@ -556,15 +543,17 @@ class InvoiceApp:
                 self.run()
                 
                 if (self.config.get('Preferences', 'Email-Mode') == self.CLIPBOARD):
-                    window['Draft'].update(visible=False)
-                    window['Subject'].update(visible=True)
-                    window['Body'].update(visible=True)
+                    window[self.DRAFT_BUTTON].update(visible=False)
+                    window[self.DRAFT_ALL_BUTTON].update(visible=False)
+                    window[self.SUBJECT_BUTTON].update(visible=True)
+                    window[self.BODY_BUTTON].update(visible=True)
                     window['EmailRecipient'].update(visible=False)
                     window['EmailInput'].update(visible=False)
                 else:
-                    window['Draft'].update(visible=True)
-                    window['Subject'].update(visible=False)
-                    window['Body'].update(visible=False)
+                    window[self.DRAFT_BUTTON].update(visible=True)
+                    window[self.DRAFT_ALL_BUTTON].update(visible=True)
+                    window[self.SUBJECT_BUTTON].update(visible=False)
+                    window[self.BODY_BUTTON].update(visible=False)
                     window['EmailRecipient'].update(visible=True)
                     window['EmailInput'].update(visible=True)
 
