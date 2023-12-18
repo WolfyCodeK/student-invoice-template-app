@@ -21,6 +21,10 @@ SCOPES = [
 ]
 
 PARENT_FOLDER = "lib/"
+
+# Create resources directory if it does not exist
+if not os.path.exists(PARENT_FOLDER):
+    os.makedirs(PARENT_FOLDER)
     
 def missingCredentials():
     messagebox.showerror(title="Missing files", message='ERROR: Missing credentials, cannot access google API.')  

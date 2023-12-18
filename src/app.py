@@ -1,563 +1,571 @@
 import PySimpleGUI as sg
-import os.path
 import json
 import re
 import pyperclip
-import datetime
-from configparser import ConfigParser
+from datetime import datetime, timedelta
 from enum import IntEnum
 from gmailAPI import gmail_create_draft
+import os.path
+from configparser import ConfigParser
 
 class PhraseType(IntEnum):
     INVOICE = 0
     SUBJECT = 1
     DATES = 2
 
-# Theme List
-themeList = ['Black', 'BlueMono', 'BluePurple', 'BrightColors', 'BrownBlue', 'Dark', 'Dark2', 'DarkAmber', 'DarkBlack', 'DarkBlack1', 'DarkBlue', 'DarkBlue1', 'DarkBlue10', 'DarkBlue11', 'DarkBlue12', 'DarkBlue13', 'DarkBlue14', 'DarkBlue15', 'DarkBlue16', 'DarkBlue17', 'DarkBlue2', 'DarkBlue3', 'DarkBlue4', 'DarkBlue5', 'DarkBlue6', 'DarkBlue7', 'DarkBlue8', 'DarkBlue9', 'DarkBrown', 'DarkBrown1', 'DarkBrown2', 'DarkBrown3', 'DarkBrown4', 'DarkBrown5', 'DarkBrown6', 'DarkGreen', 'DarkGreen1', 'DarkGreen2', 'DarkGreen3', 'DarkGreen4', 'DarkGreen5', 'DarkGreen6', 'DarkGrey', 'DarkGrey1', 'DarkGrey2', 'DarkGrey3', 'DarkGrey4', 'DarkGrey5', 'DarkGrey6', 'DarkGrey7', 'DarkPurple', 'DarkPurple1', 'DarkPurple2', 'DarkPurple3', 'DarkPurple4', 'DarkPurple5', 'DarkPurple6', 'DarkRed', 'DarkRed1', 'DarkRed2', 'DarkTanBlue', 'DarkTeal', 'DarkTeal1', 'DarkTeal10', 'DarkTeal11', 'DarkTeal12', 'DarkTeal2', 'DarkTeal3', 'DarkTeal4', 'DarkTeal5', 'DarkTeal6', 'DarkTeal7', 'DarkTeal8', 'DarkTeal9', 'Default', 'Default1', 'DefaultNoMoreNagging', 'Green', 'GreenMono', 'GreenTan', 'HotDogStand', 'Kayak', 'LightBlue', 'LightBlue1', 'LightBlue2', 'LightBlue3', 'LightBlue4', 'LightBlue5', 'LightBlue6', 'LightBlue7', 'LightBrown', 'LightBrown1', 'LightBrown10', 'LightBrown11', 'LightBrown12', 'LightBrown13', 'LightBrown2', 'LightBrown3', 'LightBrown4', 'LightBrown5', 'LightBrown6', 'LightBrown7', 'LightBrown8', 'LightBrown9', 'LightGray1', 'LightGreen', 'LightGreen1', 'LightGreen10', 'LightGreen2', 'LightGreen3', 'LightGreen4', 'LightGreen5', 'LightGreen6', 'LightGreen7', 'LightGreen8', 'LightGreen9', 'LightGrey', 'LightGrey1', 'LightGrey2', 'LightGrey3', 'LightGrey4', 'LightGrey5', 'LightGrey6', 'LightPurple', 'LightTeal', 'LightYellow', 'Material1', 'Material2', 'NeutralBlue', 'Purple', 'Reddit', 'Reds', 'SandyBeach', 'SystemDefault', 'SystemDefault1', 'SystemDefaultForReal', 'Tan', 'TanBlue', 'TealMono', 'Topanga']
+class InvoiceApp:
+    # Theme List
+    themeList = ['Black', 'BlueMono', 'BluePurple', 'BrightColors', 'BrownBlue', 'Dark', 'Dark2', 'DarkAmber', 'DarkBlack', 'DarkBlack1', 'DarkBlue', 'DarkBlue1', 'DarkBlue10', 'DarkBlue11', 'DarkBlue12', 'DarkBlue13', 'DarkBlue14', 'DarkBlue15', 'DarkBlue16', 'DarkBlue17', 'DarkBlue2', 'DarkBlue3', 'DarkBlue4', 'DarkBlue5', 'DarkBlue6', 'DarkBlue7', 'DarkBlue8', 'DarkBlue9', 'DarkBrown', 'DarkBrown1', 'DarkBrown2', 'DarkBrown3', 'DarkBrown4', 'DarkBrown5', 'DarkBrown6', 'DarkGreen', 'DarkGreen1', 'DarkGreen2', 'DarkGreen3', 'DarkGreen4', 'DarkGreen5', 'DarkGreen6', 'DarkGrey', 'DarkGrey1', 'DarkGrey2', 'DarkGrey3', 'DarkGrey4', 'DarkGrey5', 'DarkGrey6', 'DarkGrey7', 'DarkPurple', 'DarkPurple1', 'DarkPurple2', 'DarkPurple3', 'DarkPurple4', 'DarkPurple5', 'DarkPurple6', 'DarkRed', 'DarkRed1', 'DarkRed2', 'DarkTanBlue', 'DarkTeal', 'DarkTeal1', 'DarkTeal10', 'DarkTeal11', 'DarkTeal12', 'DarkTeal2', 'DarkTeal3', 'DarkTeal4', 'DarkTeal5', 'DarkTeal6', 'DarkTeal7', 'DarkTeal8', 'DarkTeal9', 'Default', 'Default1', 'DefaultNoMoreNagging', 'Green', 'GreenMono', 'GreenTan', 'HotDogStand', 'Kayak', 'LightBlue', 'LightBlue1', 'LightBlue2', 'LightBlue3', 'LightBlue4', 'LightBlue5', 'LightBlue6', 'LightBlue7', 'LightBrown', 'LightBrown1', 'LightBrown10', 'LightBrown11', 'LightBrown12', 'LightBrown13', 'LightBrown2', 'LightBrown3', 'LightBrown4', 'LightBrown5', 'LightBrown6', 'LightBrown7', 'LightBrown8', 'LightBrown9', 'LightGray1', 'LightGreen', 'LightGreen1', 'LightGreen10', 'LightGreen2', 'LightGreen3', 'LightGreen4', 'LightGreen5', 'LightGreen6', 'LightGreen7', 'LightGreen8', 'LightGreen9', 'LightGrey', 'LightGrey1', 'LightGrey2', 'LightGrey3', 'LightGrey4', 'LightGrey5', 'LightGrey6', 'LightPurple', 'LightTeal', 'LightYellow', 'Material1', 'Material2', 'NeutralBlue', 'Purple', 'Reddit', 'Reds', 'SandyBeach', 'SystemDefault', 'SystemDefault1', 'SystemDefaultForReal', 'Tan', 'TanBlue', 'TealMono', 'Topanga']
 
-# Default values
-DEFAULT_THEME = 'DarkAmber'
-KEEP_ON_TOP = True
+    # Default values
+    DEFAULT_THEME = 'DarkAmber'
+    KEEP_ON_TOP = True
 
-# Term Dates
-today = datetime.datetime.now()
-currentDate = today
+    # Term Dates
+    today = datetime.now()
+    currentDate = today
 
-# Debug code for when out of term time
-"""
-year = int(sg.popup_get_text('YEAR', size= 10, keep_on_top=KEEP_ON_TOP))
-month = int(sg.popup_get_text('MONTH', size= 10, keep_on_top=KEEP_ON_TOP))
-day = int(sg.popup_get_text('DAY', size= 10, keep_on_top=KEEP_ON_TOP))
-currentDate = datetime.datetime(year, month, day)
-"""
+    # Debug code for when out of term time
+    year = int(sg.popup_get_text('YEAR', size= 10, keep_on_top=KEEP_ON_TOP))
+    month = int(sg.popup_get_text('MONTH', size= 10, keep_on_top=KEEP_ON_TOP))
+    day = int(sg.popup_get_text('DAY', size= 10, keep_on_top=KEEP_ON_TOP))
+    currentDate = datetime(year, month, day)
 
-autumn1 = [datetime.datetime(2023, 9, 4), datetime.datetime(2023, 10, 21)]
-autumn2 = [datetime.datetime(2023, 10, 30), datetime.datetime(2023, 12, 23)]
+    autumn1 = [datetime(2023, 9, 4), datetime(2023, 10, 21)]
+    autumn2 = [datetime(2023, 10, 30), datetime(2023, 12, 23)]
 
-spring1 = [datetime.datetime(2024, 1, 8), datetime.datetime(2024, 2, 10)]
-spring2  = [datetime.datetime(2024, 2, 19), datetime.datetime(2024, 3, 30)]
+    spring1 = [datetime(2024, 1, 8), datetime(2024, 2, 10)]
+    spring2  = [datetime(2024, 2, 19), datetime(2024, 3, 30)]
 
-summer1 = [datetime.datetime(2024, 4, 15), datetime.datetime(2024, 5, 25)]
-summer2 = [datetime.datetime(2024, 5, 3), datetime.datetime(2024, 6, 24)]
+    summer1 = [datetime(2024, 4, 15), datetime(2024, 5, 25)]
+    summer2 = [datetime(2024, 5, 3), datetime(2024, 6, 24)]
 
-weekdays = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
-months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November','December']
+    weekdays = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
+    months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November','December']
 
-# Custom Fonts
-textFont = ('Lucida Console', 13)
+    # Custom Fonts
+    textFont = ('Lucida Console', 13)
 
-# File Paths
-TEMPLATES_PATH = 'templates.json'
-SETTINGS_PATH = 'settings.ini'
+    # File Paths
+    TEMPLATES_PATH = 'templates.json'
+    SETTINGS_PATH = 'settings.ini'
 
-# Resource Paths
-BLANK_ICO = 'res\Blank.ico'
-MAIN_ICO = 'res\Email.ico'
+    # Resource Paths
+    RESOURCE_DIR = 'res/'
+    BLANK_ICO = 'res/Blank.ico'
+    MAIN_ICO = 'res/Email.ico'
 
-# Window Sizes
-MAIN_WIDTH = 600
-MAIN_HEIGHT = 225
-SELECT_WIDTH = 350
-SELECT_HEIGHT = 350
-SETTINGS_WIDTH = 475
-SETTINGS_HEIGHT = 150
+    # Window Sizes
+    MAIN_WIDTH = 600
+    MAIN_HEIGHT = 225
+    SELECT_WIDTH = 350
+    SELECT_HEIGHT = 350
+    SETTINGS_WIDTH = 475
+    SETTINGS_HEIGHT = 150
 
-# Element Sizes
-MAIN_PADDING = 15
-SELECT_PADDING = 10
-SETTINGS_PADDING = 10
+    # Element Sizes
+    MAIN_PADDING = 15
+    SELECT_PADDING = 10
+    SETTINGS_PADDING = 10
 
-# Button Values
-EDIT_BUTTON = 'Edit'
-EXIT_BUTTON = 'Exit'
-NEW_BUTTON = 'New Template'
-SAVE_BUTTON = 'Save & Close'
+    # Button Values
+    EDIT_BUTTON = 'Edit'
+    EXIT_BUTTON = 'Exit'
+    NEW_BUTTON = 'New Template'
+    SAVE_BUTTON = 'Save & Close'
 
-# Combo Values
-NAMES_COMBOBOX = 'Names'
-THEME_COMBOBOX = '<Theme>'
+    # Email Modes
+    CLIPBOARD = 'Clipboard'
+    AUTO_DRAFT = 'Auto Draft'
 
-# Input Values
-RECIPIENT_INPUT = 'Recipient'
-NUMBER_INPUT = 'Number'
-COST_INPUT = 'Cost'
-INSTRUMENT_INPUT = 'Instrument'
-DAY_INPUT = 'Day'
-STUDENT_INPUT = 'Student'
-INPUT_SIZE = 15
-THEME_INPUT_SIZE = 21
+    # Combo Values
+    NAMES_COMBOBOX = 'Names'
+    THEME_COMBOBOX = '<Theme>'
 
-instrumentsList = ['piano', 'drum', 'guitar', 'vocal', 'music', 'singing', 'bass guitar', 'classical guitar']
+    # Input Values
+    RECIPIENT_INPUT = 'Recipient'
+    NUMBER_INPUT = 'Number'
+    COST_INPUT = 'Cost'
+    INSTRUMENT_INPUT = 'Instrument'
+    DAY_INPUT = 'Day'
+    STUDENT_INPUT = 'Student'
+    INPUT_SIZE = 15
+    THEME_INPUT_SIZE = 21
 
-def getPhrases(startDate, endDate, half, term):
-    bodyPhrase = str(numToWeekday(startDate.isoweekday())) + ' ' + str(startDate.day) + 'th ' + str(numToMonth(startDate.month)) + ' to and including ' + str(numToWeekday(endDate.isoweekday())) + ' ' + str(endDate.day) + 'th ' + str(numToMonth(endDate.month))
-    currentTerm = [half + ' half ' + term + ' term ' + str(startDate.year), half + ' Half ' + term.capitalize() + ' Term ' + str(endDate.year), bodyPhrase]
-    
-    return currentTerm
+    instrumentsList = ['piano', 'drum', 'guitar', 'vocal', 'music', 'singing', 'bass guitar', 'classical guitar']
 
-def whichTerm(date, numberOfLessons, day):
-    currentTerm = ['<DATE>', '<DATE>', '<DATE>']
-    dateGap = datetime.timedelta(weeks=int(numberOfLessons))
+    def __init__(self):
+        # Create resources directory if it does not exist
+        if not os.path.exists(self.RESOURCE_DIR):
+            os.makedirs(self.RESOURCE_DIR)
         
-    if (date >= autumn1[0] and date <= autumn1[1]):
-        startDate = nextDayInWeek(autumn1[0], day)
-        endDate = startDate + dateGap
+        # Create templates file if it does not exist
+        if (not os.path.isfile(self.TEMPLATES_PATH)):
+            with open(self.TEMPLATES_PATH, 'w') as f:
+                f.write('{}')
         
-        currentTerm = getPhrases(startDate, endDate, '1st', 'autumn')
+        # Create settings file if it does not exist
+        if (not os.path.isfile(self.SETTINGS_PATH)):
+            with open(self.SETTINGS_PATH, 'w') as f:
+                f.write('[Preferences]\n')
+                f.write('Theme = ' + self.DEFAULT_THEME + '\n')
+                f.write(f'Email-Mode = {self.CLIPBOARD}\n')
+                f.write('Email-Recipient = example@gmail.com')
         
-    elif (date >= autumn2[0] and date <= autumn2[1]):
-        startDate = nextDayInWeek(autumn2[0], day)
-        endDate = startDate + dateGap
-        
-        currentTerm = getPhrases(startDate, endDate, '2nd', 'autumn')
-        
-    elif (date >= spring1[0] and date <= spring1[1]):
-        startDate = nextDayInWeek(spring1[0], day)
-        endDate = startDate + dateGap
-        
-        currentTerm = getPhrases(startDate, endDate, '1st', 'spring')
-        
-    elif (date >= spring2[0] and date <= spring2[1]):
-        startDate = nextDayInWeek(spring2[0], day)
-        endDate = startDate + dateGap
-        
-        currentTerm = getPhrases(startDate, endDate, '2nd', 'spring')
-        
-    elif (date >= summer1[0] and date <= summer1[1]):
-        startDate = nextDayInWeek(summer1[0], day)
-        endDate = startDate + dateGap
-        
-        currentTerm = getPhrases(startDate, endDate, '1st', 'summer')
-        
-    elif (date >= summer2[0] and date <= summer2[1]):
-        startDate = nextDayInWeek(summer2[0], day)
-        endDate = startDate + dateGap
-        
-        currentTerm = getPhrases(startDate, endDate, '2nd', 'summer') 
-        
-    return currentTerm
-        
-def checkSelectFieldsAreNotEmpty(values):
-    return len(str(values[RECIPIENT_INPUT])) == 0 or len(str(values[NUMBER_INPUT])) == 0 or len(str(values[COST_INPUT])) == 0 or len(str(values[INSTRUMENT_INPUT])) == 0 or len(str(values[STUDENT_INPUT])) == 0
-
-def numToWeekday(num):
-    return weekdays[num-1]
-
-def numToMonth(num):
-    return months[num-1]
-
-def nextDayInWeek(date, targetDay):    
-    dayFound = False
-    searchDay = date
-    
-    while dayFound == False:
-        if (numToWeekday(searchDay.isoweekday()) == targetDay):
-            dayFound = True
-        else:
-            searchDay = searchDay + datetime.timedelta(days=1)
-        
-    return searchDay
-
-def settingsWindow():
-    # Bad fix, ideally will switch over to classes to prevent this
-    global theme
-    global emailMode
-    
-    layout = [
-                [
-                    sg.Text(THEME_COMBOBOX, font=textFont, pad=SETTINGS_PADDING), 
-                    sg.Combo(themeList, font=textFont, size=THEME_INPUT_SIZE, readonly=True, key=THEME_COMBOBOX, default_value=theme),
-                    sg.Button('Randomise', font=textFont)
-                ],
-                [
-                    sg.Text('<Email Mode>', font=textFont, pad=SETTINGS_PADDING), 
-                    sg.Combo(['Clipboard', 'Auto Draft'], font=textFont, size=THEME_INPUT_SIZE, readonly=True, key='Email Mode', default_value=emailMode),
-                ],
-                [
-                    sg.VPush()
-                ],
-                [
-                    sg.Button(SAVE_BUTTON, font=textFont),
-                    sg.Push(), 
-                    sg.Button(EXIT_BUTTON, font=textFont)
-                ]
-        ]
-    
-    window = sg.Window('', layout, element_justification='l', size=(SETTINGS_WIDTH, SETTINGS_HEIGHT), modal=True, icon=BLANK_ICO, keep_on_top=KEEP_ON_TOP)
-    
-    # Event Loop
-    while True:
-        event, values = window.read()
-        if event == EXIT_BUTTON or event == sg.WIN_CLOSED:
-            break
-        if event == 'Randomise':
-            window[THEME_COMBOBOX].update(value='')
-            theme = ''
-        if event == SAVE_BUTTON:
-            theme = values[THEME_COMBOBOX]
-            emailMode = values['Email Mode']
-
-            config.set('Preferences', 'Theme', theme)
-            config.set('Preferences', 'Email-Mode', emailMode)
+        # Create config parser
+        self.config = ConfigParser()
+        self.config.read(self.SETTINGS_PATH)
             
-            with open(SETTINGS_PATH, 'w') as configfile:
-                config.write(configfile)
-            break
+        sg.theme(self.getTheme())
+    
+    def run(self):
+        self.mainWindow()
         
-    window.close()
+    def getTheme(self) -> str:
+        return self.config.get('Preferences', 'Theme')
+        
+    def getEmailMode(self) -> str:
+        return self.config.get('Preferences', 'Email-Mode')
+    
+    def getEmailRecipient(self) -> str:
+        return self.config.get('Preferences', 'Email-Recipient')
+    
+    def getCurrentTemplate(self) -> str:
+        return self.config.get('Preferences', 'Current-Template')  
+        
+    def getPhrases(self, startDate: datetime, endDate: datetime, half: str, term: str) -> list:
+            
+        bodyPhrase = str(self.numToWeekday(startDate.isoweekday())) + ' ' + str(startDate.day) + self.getDaySuffix(startDate.day) + str(self.numToMonth(startDate.month)) + ' to and including ' + str(self.numToWeekday(endDate.isoweekday())) + ' ' + str(endDate.day) + self.getDaySuffix(endDate.day) + str(self.numToMonth(endDate.month))
+        currentTerm = [half + ' half ' + term + ' term ' + str(startDate.year), half + ' Half ' + term.capitalize() + ' Term ' + str(endDate.year), bodyPhrase]
+        
+        return currentTerm
 
-def selectedTemplateWindow(isNewTemplate, name):
-    with open(TEMPLATES_PATH, 'r') as f:
-        jsonData = json.load(f)
-        f.close()
+    def getDaySuffix(self, day: int) -> str:
+        match(day):
+            case 1:
+                return 'st '
+            case 2:
+                return 'nd '
+            case 3:
+                return 'rd '
+            case _:
+                return 'th '
+
+    def whichTerm(self, date: datetime, numberOfLessons: int, day: str) -> list:
+        currentTerm = ['<DATE>', '<DATE>', '<DATE>']
+        dateGap = timedelta(weeks=int(numberOfLessons))
+            
+        if (date >= self.autumn1[0] and date <= self.autumn1[1]):
+            startDate = self.nextDayInWeek(self.autumn1[0], day)
+            endDate = startDate + dateGap
+            
+            currentTerm = self.getPhrases(startDate, endDate, '1st', 'autumn')
+            
+        elif (date >= self.autumn2[0] and date <= self.autumn2[1]):
+            startDate = self.nextDayInWeek(self.autumn2[0], day)
+            endDate = startDate + dateGap
+            
+            currentTerm = self.getPhrases(startDate, endDate, '2nd', 'autumn')
+            
+        elif (date >= self.spring1[0] and date <= self.spring1[1]):
+            startDate = self.nextDayInWeek(self.spring1[0], day)
+            endDate = startDate + dateGap
+            
+            currentTerm = self.getPhrases(startDate, endDate, '1st', 'spring')
+            
+        elif (date >= self.spring2[0] and date <= self.spring2[1]):
+            startDate = self.nextDayInWeek(self.spring2[0], day)
+            endDate = startDate + dateGap
+            
+            currentTerm = self.getPhrases(startDate, endDate, '2nd', 'spring')
+            
+        elif (date >= self.summer1[0] and date <= self.summer1[1]):
+            startDate = self.nextDayInWeek(self.summer1[0], day)
+            endDate = startDate + dateGap
+            
+            currentTerm = self.getPhrases(startDate, endDate, '1st', 'summer')
+            
+        elif (date >= self.summer2[0] and date <= self.summer2[1]):
+            startDate = self.nextDayInWeek(self.summer2[0], day)
+            endDate = startDate + dateGap
+            
+            currentTerm = self.getPhrases(startDate, endDate, '2nd', 'summer') 
+            
+        return currentTerm
+            
+    def checkSelectFieldsAreNotEmpty(self, values: dict) -> bool:
+        return len(str(values[self.RECIPIENT_INPUT])) == 0 or len(str(values[self.NUMBER_INPUT])) == 0 or len(str(values[self.COST_INPUT])) == 0 or len(str(values[self.INSTRUMENT_INPUT])) == 0 or len(str(values[self.STUDENT_INPUT])) == 0
+
+    def numToWeekday(self, num: int) -> str:
+        return self.weekdays[num-1]
+
+    def numToMonth(self, num: int) -> str:
+        return self.months[num-1]
+
+    def nextDayInWeek(self, date: datetime, targetDay: str) -> datetime:    
+        dayFound = False
+        searchDay = date
         
-    recipientDefault = ''
-    recipientDisabled = False
-    numberDefault = ''
-    costDefault = ''
-    instrumentDefault = ''
-    dayDefault = ''
-    studentDefault = ''
-    
-    if (isNewTemplate == False):
-        recipientDefault = name
-        recipientDisabled = True
-        numberDefault = jsonData[name][NUMBER_INPUT]
-        costDefault = jsonData[name][COST_INPUT]   
-        instrumentDefault = jsonData[name][INSTRUMENT_INPUT]
-        dayDefault = jsonData[name][DAY_INPUT]
-        studentDefault = jsonData[name][STUDENT_INPUT] 
-    
-    layout = [
-                [
-                    sg.Text('Recipient', font=textFont, pad=SELECT_PADDING), 
-                    sg.Input(size=INPUT_SIZE*2, font=textFont, key=RECIPIENT_INPUT, default_text=recipientDefault, disabled=recipientDisabled, disabled_readonly_background_color='#FF6961')
-                ],
-                [
-                    sg.Text('Number of lessons', font=textFont, pad=SELECT_PADDING), 
-                    sg.Input(size=INPUT_SIZE, font=textFont, key=NUMBER_INPUT, default_text=numberDefault)
-                ],
-                [
-                    sg.Text('Cost of lesson  £', font=textFont, pad=SELECT_PADDING), 
-                    sg.Input(size=INPUT_SIZE, font=textFont, key=COST_INPUT, default_text=costDefault)
-                ],
-                [   sg.Text('Instrument', font=textFont, pad=SELECT_PADDING), 
-                    sg.Combo(values=sorted(instrumentsList), size=INPUT_SIZE*2,
-                    font=textFont, key=INSTRUMENT_INPUT, default_value=instrumentDefault, readonly=True)
-                ],
-                [
-                    sg.Text('Start Day', font=textFont, pad=SELECT_PADDING),
-                    sg.Combo(values=weekdays, size=INPUT_SIZE, font=textFont, key=DAY_INPUT, default_value=dayDefault, readonly=True)
-                ],
-                [   
-                    sg.Text('Student(s)', font=textFont)
-                ], 
-                [
-                    sg.Multiline(size=(INPUT_SIZE*2, 2), font=textFont, key=STUDENT_INPUT, default_text=studentDefault)
-                ],
-                [
-                    sg.VPush()
-                ],
-                [
-                    sg.Button(SAVE_BUTTON, font=textFont), 
-                    sg.Push(), 
-                    sg.Button(EXIT_BUTTON, font=textFont)
-                ]
-            ]
-    
-    window = sg.Window('', layout, element_justification='l', size=(SELECT_WIDTH, SELECT_HEIGHT), modal=True, icon=BLANK_ICO, keep_on_top=KEEP_ON_TOP)
-    
-    # Event Loop
-    while True:
-        event, values = window.read()
-        if event == EXIT_BUTTON or event == sg.WIN_CLOSED:
-            break
-        if event == SAVE_BUTTON: 
-            # Input error checking
-            if re.search('\d', values[RECIPIENT_INPUT]):
-                sg.popup('Recipient name cannot contain numbers!', title='', font=textFont, icon=BLANK_ICO, keep_on_top=KEEP_ON_TOP)
-            elif re.search('\D', values[NUMBER_INPUT]):
-                sg.popup('Number of lessons cannot contain characters!', title='', font=textFont, icon=BLANK_ICO, keep_on_top=KEEP_ON_TOP)
-            elif re.search('\D', str(values[COST_INPUT]).replace('.', '')):
-                sg.popup('Cost of lesson cannot contain characters!', title='', font=textFont, icon=BLANK_ICO,
-                keep_on_top=KEEP_ON_TOP)
-            elif re.search('\d', values[STUDENT_INPUT]):
-                sg.popup('Students names cannot contain numbers!', title='', font=textFont, icon=BLANK_ICO,keep_on_top=KEEP_ON_TOP)
-            elif checkSelectFieldsAreNotEmpty(values):
-                sg.popup('All fields must be completed!', title='', font=textFont, icon=BLANK_ICO, keep_on_top=KEEP_ON_TOP)
+        while dayFound == False:
+            if (self.numToWeekday(searchDay.isoweekday()) == targetDay):
+                dayFound = True
             else:
-                if (name in jsonData) and (isNewTemplate):
-                    sg.popup('Template with that name already exists!', title='', font=textFont, icon=BLANK_ICO,keep_on_top=KEEP_ON_TOP)
-                else:
-                    name = values[RECIPIENT_INPUT]
-                    
-                    info = {
-                        NUMBER_INPUT : values[NUMBER_INPUT],
-                        COST_INPUT : '%.2f' % (round(float(values[COST_INPUT]), 2)),
-                        INSTRUMENT_INPUT : values[INSTRUMENT_INPUT],
-                        DAY_INPUT: values[DAY_INPUT],
-                        STUDENT_INPUT : values[STUDENT_INPUT]
-                    }
-                    
-                    jsonData[name] = info
+                searchDay = searchDay + timedelta(days=1)
+            
+        return searchDay
 
-                    with open(TEMPLATES_PATH, 'w') as f:
-                        f.write(json.dumps(jsonData))
+    def settingsWindow(self):        
+        layout = [
+                    [
+                        sg.Text(self.THEME_COMBOBOX, font=self.textFont, pad=self.SETTINGS_PADDING), 
+                        sg.Combo(self.themeList, font=self.textFont, size=self.THEME_INPUT_SIZE, readonly=True, key=self.THEME_COMBOBOX, default_value=self.getTheme()),
+                        sg.Button('Randomise', font=self.textFont)
+                    ],
+                    [
+                        sg.Text('<Email Mode>', font=self.textFont, pad=self.SETTINGS_PADDING), 
+                        sg.Combo([self.CLIPBOARD, self.AUTO_DRAFT], font=self.textFont, size=self.THEME_INPUT_SIZE, readonly=True, key='Email Mode', default_value=self.getEmailMode()),
+                    ],
+                    [
+                        sg.VPush()
+                    ],
+                    [
+                        sg.Button(self.SAVE_BUTTON, font=self.textFont),
+                        sg.Push(), 
+                        sg.Button(self.EXIT_BUTTON, font=self.textFont)
+                    ]
+            ]
+        
+        window = sg.Window('', layout, element_justification='l', size=(self.SETTINGS_WIDTH, self.SETTINGS_HEIGHT), modal=True, icon=self.BLANK_ICO, keep_on_top=self.KEEP_ON_TOP)
+        
+        # Event Loop
+        while True:
+            event, values = window.read()
+            if event == self.EXIT_BUTTON or event == sg.WIN_CLOSED:
+                break
+            if event == 'Randomise':
+                window[self.THEME_COMBOBOX].update(value='')
+                theme = ''
+            if event == self.SAVE_BUTTON:
+                theme = values[self.THEME_COMBOBOX]
+                emailMode = values['Email Mode']
+
+                self.config.set('Preferences', 'Theme', theme)
+                self.config.set('Preferences', 'Email-Mode', emailMode)
+                
+                with open(self.SETTINGS_PATH, 'w') as configfile:
+                    self.config.write(configfile)
+                break
+            
+        window.close()
+
+    def selectedTemplateWindow(self, isNewTemplate: bool, name: str) -> str:
+        with open(self.TEMPLATES_PATH, 'r') as f:
+            jsonData = json.load(f)
+            f.close()
+            
+        recipientDefault = ''
+        recipientDisabled = False
+        numberDefault = ''
+        costDefault = ''
+        instrumentDefault = ''
+        dayDefault = ''
+        studentDefault = ''
+        
+        if (isNewTemplate == False):
+            recipientDefault = name
+            recipientDisabled = True
+            numberDefault = jsonData[name][self.NUMBER_INPUT]
+            costDefault = jsonData[name][self.COST_INPUT]   
+            instrumentDefault = jsonData[name][self.INSTRUMENT_INPUT]
+            dayDefault = jsonData[name][self.DAY_INPUT]
+            studentDefault = jsonData[name][self.STUDENT_INPUT] 
+        
+        layout = [
+                    [
+                        sg.Text('Recipient', font=self.textFont, pad=self.SELECT_PADDING), 
+                        sg.Input(size=self.INPUT_SIZE*2, font=self.textFont, key=self.RECIPIENT_INPUT, default_text=recipientDefault, disabled=recipientDisabled, disabled_readonly_background_color='#FF6961')
+                    ],
+                    [
+                        sg.Text('Number of lessons', font=self.textFont, pad=self.SELECT_PADDING), 
+                        sg.Input(size=self.INPUT_SIZE, font=self.textFont, key=self.NUMBER_INPUT, default_text=numberDefault)
+                    ],
+                    [
+                        sg.Text('Cost of lesson  £', font=self.textFont, pad=self.SELECT_PADDING), 
+                        sg.Input(size=self.INPUT_SIZE, font=self.textFont, key=self.COST_INPUT, default_text=costDefault)
+                    ],
+                    [   sg.Text('Instrument', font=self.textFont, pad=self.SELECT_PADDING), 
+                        sg.Combo(values=sorted(self.instrumentsList), size=self.INPUT_SIZE*2,
+                        font=self.textFont, key=self.INSTRUMENT_INPUT, default_value=instrumentDefault, readonly=True)
+                    ],
+                    [
+                        sg.Text('Start Day', font=self.textFont, pad=self.SELECT_PADDING),
+                        sg.Combo(values=self.weekdays, size=self.INPUT_SIZE, font=self.textFont, key=self.DAY_INPUT, default_value=dayDefault, readonly=True)
+                    ],
+                    [   
+                        sg.Text('Student(s)', font=self.textFont)
+                    ], 
+                    [
+                        sg.Multiline(size=(self.INPUT_SIZE*2, 2), font=self.textFont, key=self.STUDENT_INPUT, default_text=studentDefault)
+                    ],
+                    [
+                        sg.VPush()
+                    ],
+                    [
+                        sg.Button(self.SAVE_BUTTON, font=self.textFont), 
+                        sg.Push(), 
+                        sg.Button(self.EXIT_BUTTON, font=self.textFont)
+                    ]
+                ]
+        
+        window = sg.Window('', layout, element_justification='l', size=(self.SELECT_WIDTH, self.SELECT_HEIGHT), modal=True, icon=self.BLANK_ICO, keep_on_top=self.KEEP_ON_TOP)
+        
+        # Event Loop
+        while True:
+            event, values = window.read()
+            if event == self.EXIT_BUTTON or event == sg.WIN_CLOSED:
+                break
+            if event == self.SAVE_BUTTON: 
+                # Input error checking
+                if re.search('\d', values[self.RECIPIENT_INPUT]):
+                    sg.popup('Recipient name cannot contain numbers!', title='', font=self.textFont, icon=self.BLANK_ICO, keep_on_top=self.KEEP_ON_TOP)
+                elif re.search('\D', values[self.NUMBER_INPUT]):
+                    sg.popup('Number of lessons cannot contain characters!', title='', font=self.textFont, icon=self.BLANK_ICO, keep_on_top=self.KEEP_ON_TOP)
+                elif re.search('\D', str(values[self.COST_INPUT]).replace('.', '')):
+                    sg.popup('Cost of lesson cannot contain characters!', title='', font=self.textFont, icon=self.BLANK_ICO,
+                    keep_on_top=self.KEEP_ON_TOP)
+                elif re.search('\d', values[self.STUDENT_INPUT]):
+                    sg.popup('Students names cannot contain numbers!', title='', font=self.textFont, icon=self.BLANK_ICO,keep_on_top=self.KEEP_ON_TOP)
+                elif self.checkSelectFieldsAreNotEmpty(values):
+                    sg.popup('All fields must be completed!', title='', font=self.textFont, icon=self.BLANK_ICO, keep_on_top=self.KEEP_ON_TOP)
+                else:
+                    if (name in jsonData) and (isNewTemplate):
+                        sg.popup('Template with that name already exists!', title='', font=self.textFont, icon=self.BLANK_ICO,keep_on_top=self.KEEP_ON_TOP)
+                    else:
+                        name = values[self.RECIPIENT_INPUT]
+                        
+                        info = {
+                            self.NUMBER_INPUT : values[self.NUMBER_INPUT],
+                            self.COST_INPUT : '%.2f' % (round(float(values[self.COST_INPUT]), 2)),
+                            self.INSTRUMENT_INPUT : values[self.INSTRUMENT_INPUT],
+                            self.DAY_INPUT: values[self.DAY_INPUT],
+                            self.STUDENT_INPUT : values[self.STUDENT_INPUT]
+                        }
+                        
+                        jsonData[name] = info
+
+                        with open(self.TEMPLATES_PATH, 'w') as f:
+                            f.write(json.dumps(jsonData))
+                            f.close()
+                            
+                        break
+                
+        window.close()
+        
+        return name
+
+    def mainWindow(self):
+        with open(self.TEMPLATES_PATH, 'r') as f:
+            jsonData = json.load(f)
+            namesList = list(jsonData.keys())
+            namesList = sorted(namesList, key=str.lower)
+            f.close()
+        
+        if (self.getEmailMode() == self.CLIPBOARD):
+            subBodyEnabled = True
+            draftEnabled = False
+        else:
+            draftEnabled = True
+            subBodyEnabled = False
+            
+        currentTemplate = self.getCurrentTemplate()
+        
+        supportButtonsDisabled = False
+        
+        if currentTemplate == "":
+            supportButtonsDisabled = True
+        
+        supportButtons = [
+                            [
+                                sg.Button('DELETE', font=self.textFont, disabled=supportButtonsDisabled),
+                                sg.Push(),
+                                sg.Button(self.NEW_BUTTON, font=self.textFont), 
+                                sg.Button('Settings', font=self.textFont),
+                                sg.Button(self.EXIT_BUTTON, font=self.textFont)
+                            ]       
+                        ]
+
+        layout = [  
+                    [
+                        [
+                            sg.Text('<Templates>', font=self.textFont),
+                            sg.Combo(namesList, enable_events=True, default_value=currentTemplate, pad=self.MAIN_PADDING, key=self.NAMES_COMBOBOX, size=15, font=self.textFont, readonly=True),
+                            sg.Button(self.EDIT_BUTTON, font=self.textFont, disabled=supportButtonsDisabled),
+                            sg.Button('Draft', font=self.textFont, disabled=supportButtonsDisabled, visible=draftEnabled),
+                            sg.Button('Subject', font=self.textFont, disabled=supportButtonsDisabled, visible=subBodyEnabled),
+                            sg.Button('Body', font=self.textFont, disabled=supportButtonsDisabled, visible=subBodyEnabled)
+                        ]
+                    ],
+                    [
+                        sg.Text('<Email Recipient>', font=self.textFont, visible=draftEnabled, key='EmailRecipient'),
+                        sg.Input(size=35, font=self.textFont, key='EmailInput', default_text=self.getEmailRecipient(), visible=draftEnabled)
+                    ],
+                    [
+                        sg.VPush()
+                    ],
+                    [
+                        sg.Column(supportButtons, element_justification='right',expand_x=True)
+                    ]
+                ]
+
+        window = sg.Window('Invoice Templates', layout, element_justification='l', size=(self.MAIN_WIDTH, self.MAIN_HEIGHT), icon=self.MAIN_ICO, keep_on_top=self.KEEP_ON_TOP)
+        
+        # Event Loop
+        while True:
+            event, values = window.read()
+            
+            if event == sg.WIN_CLOSED or event == self.EXIT_BUTTON:
+                self.config.set('Preferences', 'Email-Recipient', window['EmailInput'].get())
+                
+                self.config.set('Preferences', 'Current-Template', window[self.NAMES_COMBOBOX].get())
+                
+                with open(self.SETTINGS_PATH, 'w') as configfile:
+                    self.config.write(configfile)
+                break
+            if event == self.NAMES_COMBOBOX:
+                if (not values[self.NAMES_COMBOBOX] == ''):
+                    
+                    window[self.EDIT_BUTTON].update(disabled=False)
+                    window['Draft'].update(disabled=False)
+                    window['Subject'].update(disabled=False)
+                    window['Body'].update(disabled=False)
+                    window['DELETE'].update(disabled=False)
+            if event == 'DELETE':
+                choice = sg.popup_yes_no('Are you sure you want to delete this template?', title='', font=self.textFont, icon=self.BLANK_ICO, keep_on_top=self.KEEP_ON_TOP)
+                if choice == "Yes":
+                    with open(self.TEMPLATES_PATH, 'r') as f:
+                        jsonData = json.load(f)
                         f.close()
                         
-                    break
-            
-    window.close()
-    
-    return name
-
-def mainWindow():
-    with open(TEMPLATES_PATH, 'r') as f:
-        jsonData = json.load(f)
-        namesList = list(jsonData.keys())
-        namesList = sorted(namesList, key=str.lower)
-        f.close()
-        
-    currentName = '' 
-    
-    # Once again global is bad, should change to classes
-    global emailMode
-    global emailRecipient
-    
-    if (emailMode == 'Clipboard'):
-        subBodyEnabled = True
-        draftEnabled = False
-    else:
-        draftEnabled = True
-        subBodyEnabled = False
-    
-    supportButtons = [
-                        [
-                            sg.Button('DELETE', font=textFont, disabled=True),
-                            sg.Push(),
-                            sg.Button(NEW_BUTTON, font=textFont), 
-                            sg.Button('Settings', font=textFont),
-                            sg.Button(EXIT_BUTTON, font=textFont)
-                        ]       
-                    ]
-
-    layout = [  
-                [
-                    [
-                        sg.Text('<Templates>', font=textFont),
-                        sg.Combo(namesList, enable_events=True, default_value=currentName, pad=MAIN_PADDING, key=NAMES_COMBOBOX, size=15, font=textFont, readonly=True),
-                        sg.Button(EDIT_BUTTON, font=textFont, disabled=True),
-                        sg.Button('Draft', font=textFont, disabled=True, visible=draftEnabled),
-                        sg.Button('Subject', font=textFont, disabled=True, visible=subBodyEnabled),
-                        sg.Button('Body', font=textFont, disabled=True, visible=subBodyEnabled)
-                    ]
-                ],
-                [
-                    sg.Text('<Email Recipient>', font=textFont, visible=draftEnabled, key='EmailRecipient'),
-                    sg.Input(size=35, font=textFont, key='EmailInput', default_text=emailRecipient, visible=draftEnabled)
-                ],
-                [
-                    sg.VPush()
-                ],
-                [
-                    sg.Column(supportButtons, element_justification='right',expand_x=True)
-                ]
-            ]
-
-    window = sg.Window('Invoice Templates', layout, element_justification='l', size=(MAIN_WIDTH, MAIN_HEIGHT), icon=MAIN_ICO, keep_on_top=KEEP_ON_TOP)
-    
-    # Event Loop
-    while True:
-        event, values = window.read()
-        
-        if event == sg.WIN_CLOSED or event == EXIT_BUTTON:
-            config.set('Preferences', 'Email-Recipient', window['EmailInput'].get())
-            
-            with open(SETTINGS_PATH, 'w') as configfile:
-                config.write(configfile)
-            break
-        if event == NAMES_COMBOBOX:
-            if (not values[NAMES_COMBOBOX] == ''):
+                    del jsonData[values[self.NAMES_COMBOBOX]]   
+                    
+                    namesList = list(jsonData.keys())
+                    namesList = sorted(namesList, key=str.lower)
+                    window[self.NAMES_COMBOBOX].update(values=namesList) 
+                    
+                    with open(self.TEMPLATES_PATH, 'w') as f:
+                        f.write(json.dumps(jsonData))   
+                        f.close()          
+                        
+                    window[self.EDIT_BUTTON].update(disabled=True)
+                    window['Draft'].update(disabled=True)
+                    window['Subject'].update(disabled=True)
+                    window['Body'].update(disabled=True)
+                    window['DELETE'].update(disabled=True)
                 
-                window[EDIT_BUTTON].update(disabled=False)
-                window['Draft'].update(disabled=False)
-                window['Subject'].update(disabled=False)
-                window['Body'].update(disabled=False)
-                window['DELETE'].update(disabled=False)
-        if event == 'DELETE':
-            choice = sg.popup_yes_no('Are you sure you want to delete this template?', title='', font=textFont, icon=BLANK_ICO, keep_on_top=KEEP_ON_TOP)
-            if choice == "Yes":
-                with open(TEMPLATES_PATH, 'r') as f:
+            if event == self.EDIT_BUTTON:
+                self.selectedTemplateWindow(False, values[self.NAMES_COMBOBOX])
+                
+            if event == self.NEW_BUTTON:
+                name = self.selectedTemplateWindow(True, '')
+                
+                with open(self.TEMPLATES_PATH, 'r') as f:
                     jsonData = json.load(f)
-                    f.close()
+                    namesList = list(jsonData.keys())
+                    namesList = sorted(namesList, key=str.lower)
                     
-                del jsonData[values[NAMES_COMBOBOX]]   
+                window[self.NAMES_COMBOBOX].update(value=name, values=namesList)
                 
-                namesList = list(jsonData.keys())
-                namesList = sorted(namesList, key=str.lower)
-                window[NAMES_COMBOBOX].update(values=namesList) 
+            if event == 'Draft':
+                # Subject
+                with open(self.TEMPLATES_PATH, 'r') as f:
+                    jsonData = json.load(f)
                 
-                with open(TEMPLATES_PATH, 'w') as f:
-                    f.write(json.dumps(jsonData))   
-                    f.close()          
-                    
-                window[EDIT_BUTTON].update(disabled=True)
-                window['Draft'].update(disabled=True)
-                window['Subject'].update(disabled=True)
-                window['Body'].update(disabled=True)
-                window['DELETE'].update(disabled=True)
-             
-        if event == EDIT_BUTTON:
-            selectedTemplateWindow(False, values[NAMES_COMBOBOX])
-            
-        if event == NEW_BUTTON:
-            name = selectedTemplateWindow(True, '')
-            
-            window[EDIT_BUTTON].update(disabled=True)
-            window['Draft'].update(disabled=True)
-            window['Subject'].update(disabled=True)
-            window['Body'].update(disabled=True)
-            window['DELETE'].update(disabled=True)
-            
-            with open(TEMPLATES_PATH, 'r') as f:
-                jsonData = json.load(f)
-                namesList = list(jsonData.keys())
-                namesList = sorted(namesList, key=str.lower)
+                day = jsonData[values[self.NAMES_COMBOBOX]][self.DAY_INPUT]
+                numberOfLessons = jsonData[values[self.NAMES_COMBOBOX]][self.NUMBER_INPUT]
+                instrument = jsonData[values[self.NAMES_COMBOBOX]][self.INSTRUMENT_INPUT]
+                phrases = self.whichTerm(self.currentDate, numberOfLessons, day)
                 
-            window[NAMES_COMBOBOX].update(values=namesList)
-            values[NAMES_COMBOBOX] = name
+                subjectText = f"Invoice for {instrument.title()} Lessons {phrases[PhraseType.SUBJECT]}"
+                
+                
+                # Body
+                with open(self.TEMPLATES_PATH, 'r') as f:
+                    jsonData = json.load(f)
+                
+                name = values[self.NAMES_COMBOBOX]
+                numberOfLessons = jsonData[values[self.NAMES_COMBOBOX]][self.NUMBER_INPUT]
+                costOfLessons = jsonData[values[self.NAMES_COMBOBOX]][self.COST_INPUT]
+                totalCost = int(numberOfLessons) * float(costOfLessons)
+                totalCost = '%.2f' % (round(float(totalCost), 2))
+                instrument = jsonData[values[self.NAMES_COMBOBOX]][self.INSTRUMENT_INPUT]
+                day = jsonData[values[self.NAMES_COMBOBOX]][self.DAY_INPUT]
+                students = jsonData[values[self.NAMES_COMBOBOX]][self.STUDENT_INPUT]
+                
+                phrases = self.whichTerm(self.currentDate, numberOfLessons, day)
             
-        if event == 'Draft':
-            # Subject
-            with open(TEMPLATES_PATH, 'r') as f:
-                jsonData = json.load(f)
+                numberOfLessonsPhrase = f"There are {numberOfLessons} sessions"
+                
+                if int(numberOfLessons) == 1:
+                    numberOfLessonsPhrase = f"There is {numberOfLessons} session"
             
-            day = str(jsonData[values[NAMES_COMBOBOX]][DAY_INPUT])
-            numberOfLessons = str(jsonData[values[NAMES_COMBOBOX]][NUMBER_INPUT])
-            instrument = str(jsonData[values[NAMES_COMBOBOX]][INSTRUMENT_INPUT])
-            phrases = whichTerm(currentDate, numberOfLessons, day)
+                bodyText = f"Hi {name},\n\nHere is my invoice for {students}'s {instrument} lessons {phrases[PhraseType.INVOICE]}.\n--------\n{numberOfLessonsPhrase} this {phrases[PhraseType.INVOICE]} from {phrases[PhraseType.DATES]}.\n\n{numberOfLessons} x £{costOfLessons} = £{totalCost}\n\nThank you\n--------\n\nKind regards\nRobert"
+                
+                # Send Email
+                gmail_create_draft(self.getEmailRecipient(), subjectText, bodyText)
+                
+                sg.popup_quick_message('Draft Sent!', font=self.textFont, title='', icon=self.BLANK_ICO, keep_on_top=self.KEEP_ON_TOP, background_color="Black", text_color="White")
+                
+            if event == 'Subject':
+                with open(self.TEMPLATES_PATH, 'r') as f:
+                    jsonData = json.load(f)
+                
+                day = str(jsonData[values[self.NAMES_COMBOBOX]][self.DAY_INPUT])
+                numberOfLessons = str(jsonData[values[self.NAMES_COMBOBOX]][self.NUMBER_INPUT])
+                instrument = str(jsonData[values[self.NAMES_COMBOBOX]][self.INSTRUMENT_INPUT])
+                phrases = self.whichTerm(self.currentDate, numberOfLessons, day)
+                
+                pyperclip.copy("""Invoice for """ + instrument.title() + """ Lessons """ + str(phrases[PhraseType.SUBJECT]))
+                
+            if event == 'Body':
+                with open(self.TEMPLATES_PATH, 'r') as f:
+                    jsonData = json.load(f)
+                
+                name = values[self.NAMES_COMBOBOX]
+                numberOfLessons = jsonData[values[self.NAMES_COMBOBOX]][self.NUMBER_INPUT]
+                costOfLessons = jsonData[values[self.NAMES_COMBOBOX]][self.COST_INPUT]
+                totalCost = int(numberOfLessons) * float(costOfLessons)
+                totalCost = '%.2f' % (round(float(totalCost), 2))
+                instrument = jsonData[values[self.NAMES_COMBOBOX]][self.INSTRUMENT_INPUT]
+                day = jsonData[values[self.NAMES_COMBOBOX]][self.DAY_INPUT]
+                students = jsonData[values[self.NAMES_COMBOBOX]][self.STUDENT_INPUT]
+                
+                phrases = self.whichTerm(self.currentDate, numberOfLessons, day)
             
-            subjectText = ("""Invoice for """ + instrument.title() + """ Lessons """ + str(phrases[PhraseType.SUBJECT]))
+                numberOfLessonsPhrase = f"There are {numberOfLessons} sessions"
+                
+                if int(numberOfLessons) == 1:
+                    numberOfLessonsPhrase = f"There is {numberOfLessons} session"
             
-            
-            # Body
-            with open(TEMPLATES_PATH, 'r') as f:
-                jsonData = json.load(f)
-            
-            name = str(values[NAMES_COMBOBOX])
-            numberOfLessons = str(jsonData[values[NAMES_COMBOBOX]][NUMBER_INPUT])
-            costOfLessons = str(jsonData[values[NAMES_COMBOBOX]][COST_INPUT])
-            totalCost = str(int(numberOfLessons) * float(costOfLessons))
-            totalCost = '%.2f' % (round(float(totalCost), 2))
-            instrument = str(jsonData[values[NAMES_COMBOBOX]][INSTRUMENT_INPUT])
-            day = str(jsonData[values[NAMES_COMBOBOX]][DAY_INPUT])
-            students = str(jsonData[values[NAMES_COMBOBOX]][STUDENT_INPUT])
-            
-            phrases = whichTerm(currentDate, numberOfLessons, day)
-        
-            bodyText =(
-"""Hi """ + name +  """,
+                pyperclip.copy(f"Hi {name},\n\nHere is my invoice for {students}'s {instrument} lessons {phrases[PhraseType.INVOICE]}.\n--------\n{numberOfLessonsPhrase} this {phrases[PhraseType.INVOICE]} from {phrases[PhraseType.DATES]}.\n\n{numberOfLessons} x £{costOfLessons} = £{totalCost}\n\nThank you\n--------\n\nKind regards\nRobert")
 
-Here is my invoice for """ + students + """'s """ + instrument + """ lessons """ + str(phrases[PhraseType.INVOICE]) + """.
---------
-There are """ + numberOfLessons + """ sessions this """ + str(phrases[PhraseType.DATES]) + """.\n
-""" + numberOfLessons + """ x £""" + costOfLessons + """ = £""" + totalCost + """
+            if event == 'Settings':
+                self.settingsWindow()
+                
+                sg.theme(self.getTheme())
+                window.close()
+                self.run()
+                
+                if (self.config.get('Preferences', 'Email-Mode') == self.CLIPBOARD):
+                    window['Draft'].update(visible=False)
+                    window['Subject'].update(visible=True)
+                    window['Body'].update(visible=True)
+                    window['EmailRecipient'].update(visible=False)
+                    window['EmailInput'].update(visible=False)
+                else:
+                    window['Draft'].update(visible=True)
+                    window['Subject'].update(visible=False)
+                    window['Body'].update(visible=False)
+                    window['EmailRecipient'].update(visible=True)
+                    window['EmailInput'].update(visible=True)
 
-Thank you
---------
-
-Kind regards
-Robert""")
-            
-            # Send Email
-            gmail_create_draft(emailRecipient, subjectText, bodyText)
-            
-            sg.popup_quick_message('Draft Sent!', font=textFont, title='', icon=BLANK_ICO, keep_on_top=KEEP_ON_TOP, background_color="Black", text_color="White")
-            
-        if event == 'Subject':
-            with open(TEMPLATES_PATH, 'r') as f:
-                jsonData = json.load(f)
-            
-            day = str(jsonData[values[NAMES_COMBOBOX]][DAY_INPUT])
-            numberOfLessons = str(jsonData[values[NAMES_COMBOBOX]][NUMBER_INPUT])
-            instrument = str(jsonData[values[NAMES_COMBOBOX]][INSTRUMENT_INPUT])
-            phrases = whichTerm(currentDate, numberOfLessons, day)
-            
-            pyperclip.copy("""Invoice for """ + instrument.title() + """ Lessons """ + str(phrases[PhraseType.SUBJECT]))
-            
-        if event == 'Body':
-            with open(TEMPLATES_PATH, 'r') as f:
-                jsonData = json.load(f)
-            
-            name = str(values[NAMES_COMBOBOX])
-            numberOfLessons = str(jsonData[values[NAMES_COMBOBOX]][NUMBER_INPUT])
-            costOfLessons = str(jsonData[values[NAMES_COMBOBOX]][COST_INPUT])
-            totalCost = str(int(numberOfLessons) * float(costOfLessons))
-            totalCost = '%.2f' % (round(float(totalCost), 2))
-            instrument = str(jsonData[values[NAMES_COMBOBOX]][INSTRUMENT_INPUT])
-            day = str(jsonData[values[NAMES_COMBOBOX]][DAY_INPUT])
-            students = str(jsonData[values[NAMES_COMBOBOX]][STUDENT_INPUT])
-            
-            phrases = whichTerm(currentDate, numberOfLessons, day)
-        
-            pyperclip.copy(
-"""Hi """ + name +  """,
-
-Here is my invoice for """ + students + """'s """ + instrument + """ lessons """ + str(phrases[PhraseType.INVOICE]) + """.
---------
-There are """ + numberOfLessons + """ sessions this """ + str(phrases[PhraseType.DATES]) + """.\n
-""" + numberOfLessons + """ x £""" + costOfLessons + """ = £""" + totalCost + """
-
-Thank you
---------
-
-Kind regards
-Robert"""
-)    
-
-        if event == 'Settings':
-            settingsWindow()
-            
-            if (emailMode == 'Clipboard'):
-                window['Draft'].update(visible=False)
-                window['Subject'].update(visible=True)
-                window['Body'].update(visible=True)
-                window['EmailRecipient'].update(visible=False)
-                window['EmailInput'].update(visible=False)
-            else:
-                window['Draft'].update(visible=True)
-                window['Subject'].update(visible=False)
-                window['Body'].update(visible=False)
-                window['EmailRecipient'].update(visible=True)
-                window['EmailInput'].update(visible=True)
-
-    window.close()
-
-# Start of program
-if __name__ == "__main__":    
-    # Create templates file if it does not exist
-    if (not os.path.isfile(TEMPLATES_PATH)):
-        with open(TEMPLATES_PATH, 'w') as f:
-            f.write('{}')
-    
-    # Create settings file if it does not exist
-    if (not os.path.isfile(SETTINGS_PATH)):
-        with open(SETTINGS_PATH, 'w') as f:
-            f.write('[Preferences]\n')
-            f.write('Theme = ' + DEFAULT_THEME + '\n')
-            f.write('Email-Mode = Clipboard\n')
-            f.write('Email-Recipient = example@gmail.com')
-    
-    # Create config parser
-    config = ConfigParser()
-    config.read(SETTINGS_PATH)
-        
-    # Get theme being used
-    theme = config.get('Preferences', 'Theme')
-    emailMode = config.get('Preferences', 'Email-Mode')
-    emailRecipient = config.get('Preferences', 'Email-Recipient')     
-        
-    sg.theme(theme)
-
-    mainWindow()
+        window.close()
