@@ -74,7 +74,7 @@ def encryptCredentials():
         
     return key
 
-def gmail_create_draft(recipient, subject, body):
+def gmail_create_draft(subject, body):
     creds = None
     # The file token.json stores the user's access and refresh tokens, and is
     # created automatically when the authorization flow completes for the first
@@ -110,8 +110,6 @@ def gmail_create_draft(recipient, subject, body):
 
         message.set_content(body)
 
-        message['To'] = recipient
-        #message['From'] = sender
         message['Subject'] = subject
 
         # encoded message

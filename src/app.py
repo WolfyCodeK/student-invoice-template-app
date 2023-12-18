@@ -1,3 +1,4 @@
+from math import floor
 import PySimpleGUI as sg
 import json
 import re
@@ -39,6 +40,8 @@ class InvoiceApp:
 
     summer1 = [datetime(2024, 4, 15), datetime(2024, 5, 25)]
     summer2 = [datetime(2024, 5, 3), datetime(2024, 6, 24)]
+
+    termList = [autumn1, autumn2, spring1, spring2, summer1, summer2]
 
     weekdays = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
     months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November','December']
@@ -92,7 +95,6 @@ class InvoiceApp:
 
     # Input Values
     RECIPIENT_INPUT = 'Recipient'
-    NUMBER_INPUT = 'Number'
     COST_INPUT = 'Cost'
     INSTRUMENT_INPUT = 'Instrument'
     DAY_INPUT = 'Day'
@@ -118,7 +120,7 @@ class InvoiceApp:
                 f.write('[Preferences]\n')
                 f.write('Theme = ' + self.DEFAULT_THEME + '\n')
                 f.write(f'Email-Mode = {self.CLIPBOARD}\n')
-                f.write('Email-Recipient = example@gmail.com')
+                f.write(f'Current-Template = \n')
         
         # Create config parser
         self.config = ConfigParser()
@@ -134,9 +136,6 @@ class InvoiceApp:
         
     def getEmailMode(self) -> str:
         return self.config.get('Preferences', 'Email-Mode')
-    
-    def getEmailRecipient(self) -> str:
-        return self.config.get('Preferences', 'Email-Recipient')
     
     def getCurrentTemplate(self) -> str:
         return self.config.get('Preferences', 'Current-Template')  
@@ -159,50 +158,27 @@ class InvoiceApp:
             case _:
                 return 'th '
 
-    def whichTerm(self, date: datetime, numberOfLessons: int, day: str) -> list:
-        currentTerm = ['<DATE>', '<DATE>', '<DATE>']
-        dateGap = timedelta(weeks=int(numberOfLessons))
-            
-        if (date >= self.autumn1[0] and date <= self.autumn1[1]):
-            startDate = self.nextDayInWeek(self.autumn1[0], day)
-            endDate = startDate + dateGap
-            
-            currentTerm = self.getPhrases(startDate, endDate, '1st', 'autumn')
-            
-        elif (date >= self.autumn2[0] and date <= self.autumn2[1]):
-            startDate = self.nextDayInWeek(self.autumn2[0], day)
-            endDate = startDate + dateGap
-            
-            currentTerm = self.getPhrases(startDate, endDate, '2nd', 'autumn')
-            
-        elif (date >= self.spring1[0] and date <= self.spring1[1]):
-            startDate = self.nextDayInWeek(self.spring1[0], day)
-            endDate = startDate + dateGap
-            
-            currentTerm = self.getPhrases(startDate, endDate, '1st', 'spring')
-            
-        elif (date >= self.spring2[0] and date <= self.spring2[1]):
-            startDate = self.nextDayInWeek(self.spring2[0], day)
-            endDate = startDate + dateGap
-            
-            currentTerm = self.getPhrases(startDate, endDate, '2nd', 'spring')
-            
-        elif (date >= self.summer1[0] and date <= self.summer1[1]):
-            startDate = self.nextDayInWeek(self.summer1[0], day)
-            endDate = startDate + dateGap
-            
-            currentTerm = self.getPhrases(startDate, endDate, '1st', 'summer')
-            
-        elif (date >= self.summer2[0] and date <= self.summer2[1]):
-            startDate = self.nextDayInWeek(self.summer2[0], day)
-            endDate = startDate + dateGap
-            
-            currentTerm = self.getPhrases(startDate, endDate, '2nd', 'summer') 
-            
-        return currentTerm
+    def getTermLengthInWeeks(self, startDate, endDate) -> timedelta:
+        monday1 = (startDate - timedelta(days=startDate.weekday()))
+        monday2 = (endDate - timedelta(days=endDate.weekday()))   
+        
+        return timedelta(weeks=((monday2 - monday1).days / 7))
+
+    def whichTerm(self, date: datetime, day: str) -> tuple:
+        currentTerm = ['<DATE>', '<DATE>', '<DATE>'] 
+
+        for term in self.termList:
+            if (date >= term[0] and date <= term[1]):
+                startDate = self.nextDayInWeek(term[0], day)
+                dateGap = self.getTermLengthInWeeks(term[0], term[1])
+                endDate = startDate + dateGap
+        
+                currentTerm = self.getPhrases(startDate, endDate - timedelta(weeks=1), '1st', 'autumn')
+                
+                return currentTerm, int(dateGap.days / 7)
             
     def checkSelectFieldsAreNotEmpty(self, values: dict) -> bool:
-        return len(str(values[self.RECIPIENT_INPUT])) == 0 or len(str(values[self.NUMBER_INPUT])) == 0 or len(str(values[self.COST_INPUT])) == 0 or len(str(values[self.INSTRUMENT_INPUT])) == 0 or len(str(values[self.STUDENT_INPUT])) == 0
+        return len(str(values[self.RECIPIENT_INPUT])) == 0 or len(str(values[self.COST_INPUT])) == 0 or len(str(values[self.INSTRUMENT_INPUT])) == 0 or len(str(values[self.STUDENT_INPUT])) == 0
 
     def numToWeekday(self, num: int) -> str:
         return self.weekdays[num-1]
@@ -235,38 +211,35 @@ class InvoiceApp:
             
         return namesList
 
-    def getSubject(self, values: dict) -> str:
+    def getSubject(self, name: str) -> str:
         with open(self.TEMPLATES_PATH, 'r') as f:
-                    jsonData = json.load(f)
+            jsonData = json.load(f)
          
-        day = str(jsonData[values[self.NAMES_COMBOBOX]][self.DAY_INPUT])
-        numberOfLessons = str(jsonData[values[self.NAMES_COMBOBOX]][self.NUMBER_INPUT])
-        instrument = str(jsonData[values[self.NAMES_COMBOBOX]][self.INSTRUMENT_INPUT])
-        phrases = self.whichTerm(self.currentDate, numberOfLessons, day)
+        day = str(jsonData[name][self.DAY_INPUT])
+        instrument = str(jsonData[name][self.INSTRUMENT_INPUT])
+        phrases, _ = self.whichTerm(self.currentDate, day)
         
         return f"Invoice for {instrument.title()} Lessons {phrases[PhraseType.SUBJECT]}"
     
-    def getBody(self, values: dict) -> str:
+    def getBody(self, name: str) -> str:
         with open(self.TEMPLATES_PATH, 'r') as f:
             jsonData = json.load(f)
         
-        name = values[self.NAMES_COMBOBOX]
-        numberOfLessons = jsonData[values[self.NAMES_COMBOBOX]][self.NUMBER_INPUT]
-        costOfLessons = jsonData[values[self.NAMES_COMBOBOX]][self.COST_INPUT]
-        totalCost = int(numberOfLessons) * float(costOfLessons)
-        totalCost = '%.2f' % (round(float(totalCost), 2))
-        instrument = jsonData[values[self.NAMES_COMBOBOX]][self.INSTRUMENT_INPUT]
-        day = jsonData[values[self.NAMES_COMBOBOX]][self.DAY_INPUT]
-        students = jsonData[values[self.NAMES_COMBOBOX]][self.STUDENT_INPUT]
+        costOfLessons = jsonData[name][self.COST_INPUT]
+        instrument = jsonData[name][self.INSTRUMENT_INPUT]
+        day = jsonData[name][self.DAY_INPUT]
+        students = jsonData[name][self.STUDENT_INPUT]
         
-        phrases = self.whichTerm(self.currentDate, numberOfLessons, day)
-    
-        numberOfLessonsPhrase = f"There are {numberOfLessons} sessions"
+        phrases, numOfLessons = self.whichTerm(self.currentDate, day)
         
-        if int(numberOfLessons) == 1:
-            numberOfLessonsPhrase = f"There is {numberOfLessons} session"
+        totalCost = '%.2f' % (round(float(int(numOfLessons) * float(costOfLessons)), 2))
     
-        return f"Hi {name},\n\nHere is my invoice for {students}'s {instrument} lessons {phrases[PhraseType.INVOICE]}.\n--------\n{numberOfLessonsPhrase} this {phrases[PhraseType.INVOICE]} from {phrases[PhraseType.DATES]}.\n\n{numberOfLessons} x £{costOfLessons} = £{totalCost}\n\nThank you\n--------\n\nKind regards\nRobert"
+        numberOfLessonsPhrase = f"There are {numOfLessons} sessions"
+        
+        if int(numOfLessons) == 1:
+            numberOfLessonsPhrase = f"There is {numOfLessons} session"
+    
+        return f"Hi {name},\n\nHere is my invoice for {students}'s {instrument} lessons {phrases[PhraseType.INVOICE]}.\n--------\n{numberOfLessonsPhrase} this {phrases[PhraseType.INVOICE]} from {phrases[PhraseType.DATES]}.\n\n{numOfLessons} x £{costOfLessons} = £{totalCost}\n\nThank you\n--------\n\nKind regards\nRobert"
 
     def settingsWindow(self):        
         layout = [
@@ -319,7 +292,6 @@ class InvoiceApp:
             
         recipientDefault = ''
         recipientDisabled = False
-        numberDefault = ''
         costDefault = ''
         instrumentDefault = ''
         dayDefault = ''
@@ -328,7 +300,6 @@ class InvoiceApp:
         if not isNewTemplate:
             recipientDefault = name
             recipientDisabled = True
-            numberDefault = jsonData[name][self.NUMBER_INPUT]
             costDefault = jsonData[name][self.COST_INPUT]   
             instrumentDefault = jsonData[name][self.INSTRUMENT_INPUT]
             dayDefault = jsonData[name][self.DAY_INPUT]
@@ -338,10 +309,6 @@ class InvoiceApp:
                     [
                         sg.Text('Recipient', font=self.textFont, pad=self.SELECT_PADDING), 
                         sg.Input(size=self.INPUT_SIZE*2, font=self.textFont, key=self.RECIPIENT_INPUT, default_text=recipientDefault, disabled=recipientDisabled, disabled_readonly_background_color='#FF6961')
-                    ],
-                    [
-                        sg.Text('Number of lessons', font=self.textFont, pad=self.SELECT_PADDING), 
-                        sg.Input(size=self.INPUT_SIZE, font=self.textFont, key=self.NUMBER_INPUT, default_text=numberDefault)
                     ],
                     [
                         sg.Text('Cost of lesson  £', font=self.textFont, pad=self.SELECT_PADDING), 
@@ -382,8 +349,6 @@ class InvoiceApp:
                 # Input error checking
                 if re.search('\d', values[self.RECIPIENT_INPUT]):
                     sg.popup('Recipient name cannot contain numbers!', title='', font=self.textFont, icon=self.BLANK_ICO, keep_on_top=self.KEEP_ON_TOP)
-                elif re.search('\D', values[self.NUMBER_INPUT]):
-                    sg.popup('Number of lessons cannot contain characters!', title='', font=self.textFont, icon=self.BLANK_ICO, keep_on_top=self.KEEP_ON_TOP)
                 elif re.search('\D', str(values[self.COST_INPUT]).replace('.', '')):
                     sg.popup('Cost of lesson cannot contain characters!', title='', font=self.textFont, icon=self.BLANK_ICO,
                     keep_on_top=self.KEEP_ON_TOP)
@@ -398,7 +363,6 @@ class InvoiceApp:
                         name = values[self.RECIPIENT_INPUT]
                         
                         info = {
-                            self.NUMBER_INPUT : values[self.NUMBER_INPUT],
                             self.COST_INPUT : '%.2f' % (round(float(values[self.COST_INPUT]), 2)),
                             self.INSTRUMENT_INPUT : values[self.INSTRUMENT_INPUT],
                             self.DAY_INPUT: values[self.DAY_INPUT],
@@ -457,10 +421,6 @@ class InvoiceApp:
                         ]
                     ],
                     [
-                        sg.Text('<Email Recipient>', font=self.textFont, visible=draftEnabled, key='EmailRecipient'),
-                        sg.Input(size=35, font=self.textFont, key='EmailInput', default_text=self.getEmailRecipient(), visible=draftEnabled)
-                    ],
-                    [
                         sg.VPush()
                     ],
                     [
@@ -474,20 +434,19 @@ class InvoiceApp:
         while True:
             event, values = window.read()
             
-            if event == sg.WIN_CLOSED or event == self.EXIT_BUTTON:
-                self.config.set('Preferences', 'Email-Recipient', window['EmailInput'].get())
-                
+            if event == sg.WIN_CLOSED or event == self.EXIT_BUTTON:                
                 self.config.set('Preferences', 'Current-Template', window[self.NAMES_COMBOBOX].get())
                 
                 with open(self.SETTINGS_PATH, 'w') as configfile:
                     self.config.write(configfile)
                 break
+                   
             if event == self.NAMES_COMBOBOX:
-                if (not values[self.NAMES_COMBOBOX] == ''):
+                self.toggleButtonsDisabled(window, self.templateEditButtonsList, False)        
                     
-                    self.toggleButtonsDisabled(window, self.templateEditButtonsList, False)
             if event == self.DELETE_BUTTON:
                 choice = sg.popup_yes_no('Are you sure you want to delete this template?', title='', font=self.textFont, icon=self.BLANK_ICO, keep_on_top=self.KEEP_ON_TOP)
+                
                 if choice == "Yes":
                     with open(self.TEMPLATES_PATH, 'r') as f:
                         jsonData = json.load(f)
@@ -501,7 +460,7 @@ class InvoiceApp:
                     
                     with open(self.TEMPLATES_PATH, 'w') as f:
                         f.write(json.dumps(jsonData))   
-                        f.close()          
+                        f.close()        
                         
                     self.toggleButtonsDisabled(window, self.templateEditButtonsList, True)
                 
@@ -511,29 +470,34 @@ class InvoiceApp:
             if event == self.NEW_BUTTON:
                 name = self.selectedTemplateWindow(True, '')
                 
-                with open(self.TEMPLATES_PATH, 'r') as f:
-                    jsonData = json.load(f)
-                    namesList = list(jsonData.keys())
-                    namesList = sorted(namesList, key=str.lower)
+                if name != '':
+                    with open(self.TEMPLATES_PATH, 'r') as f:
+                        jsonData = json.load(f)
+                        namesList = list(jsonData.keys())
+                        namesList = sorted(namesList, key=str.lower)
                     
-                window[self.NAMES_COMBOBOX].update(value=name, values=namesList)
-                
+                    window[self.NAMES_COMBOBOX].update(value=name, values=namesList)
+                    
+                    self.toggleButtonsDisabled(window, self.templateEditButtonsList, False)
+                else:
+                    self.toggleButtonsDisabled(window, self.templateEditButtonsList, True)
+            
             if event == self.DRAFT_BUTTON:
-                gmail_create_draft(self.getEmailRecipient(), self.getSubject(values), self.getBody(values))
+                gmail_create_draft(self.getSubject(values[self.NAMES_COMBOBOX]), self.getBody(values[self.NAMES_COMBOBOX]))
                 
                 sg.popup_quick_message('Draft Sent!', font=self.textFont, title='', icon=self.BLANK_ICO, keep_on_top=self.KEEP_ON_TOP, background_color="Black", text_color="White")
                 
             if event == self.DRAFT_ALL_BUTTON:
                 for name in self.getNamesList():
-                    gmail_create_draft(self.getEmailRecipient(), self.getSubject(values), self.getBody(values))
+                    gmail_create_draft(self.getSubject(values[name]), self.getBody(values[name]))
                 
                 sg.popup_quick_message('All Drafts Sent!', font=self.textFont, title='', icon=self.BLANK_ICO, keep_on_top=self.KEEP_ON_TOP, background_color="Black", text_color="White")
                 
             if event == self.SUBJECT_BUTTON:
-                pyperclip.copy(self.getSubject(values))
+                pyperclip.copy(self.getSubject(values[self.NAMES_COMBOBOX]))
                 
             if event == self.BODY_BUTTON:
-                pyperclip.copy(self.getBody(values))
+                pyperclip.copy(self.getBody(values[self.NAMES_COMBOBOX]))
 
             if event == self.SETTINGS_BUTTON:
                 self.settingsWindow()
@@ -547,14 +511,10 @@ class InvoiceApp:
                     window[self.DRAFT_ALL_BUTTON].update(visible=False)
                     window[self.SUBJECT_BUTTON].update(visible=True)
                     window[self.BODY_BUTTON].update(visible=True)
-                    window['EmailRecipient'].update(visible=False)
-                    window['EmailInput'].update(visible=False)
                 else:
                     window[self.DRAFT_BUTTON].update(visible=True)
                     window[self.DRAFT_ALL_BUTTON].update(visible=True)
                     window[self.SUBJECT_BUTTON].update(visible=False)
                     window[self.BODY_BUTTON].update(visible=False)
-                    window['EmailRecipient'].update(visible=True)
-                    window['EmailInput'].update(visible=True)
 
         window.close()
