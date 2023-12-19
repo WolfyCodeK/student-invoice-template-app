@@ -273,6 +273,16 @@ class InvoiceApp:
     
         return f"Hi {name},\n\nHere is my invoice for {students}'s {instrument} lessons {phrases[PhraseType.INVOICE]}.\n--------\n{numberOfLessonsPhrase} this {phrases[PhraseType.INVOICE]} from {phrases[PhraseType.DATES]}.\n\n{numOfLessons} x £{costOfLessons} = £{totalCost}\n\nThank you\n--------\n\nKind regards\nRobert"
 
+    def displayPopUpMessage(self, title: str, yesorno: bool) -> None|str:
+        if yesorno:
+             choice = sg.popup_yes_no(title, title='', font=self.textFont, icon=self.BLANK_ICO, keep_on_top=self.KEEP_ON_TOP)
+             
+             return choice
+        else:
+            sg.popup_quick_message(title, font=self.textFont, title='', icon=self.BLANK_ICO, keep_on_top=self.KEEP_ON_TOP, background_color="Black", text_color="White")
+            
+            return None
+            
     def settingsWindow(self):        
         layout = [
                     [
@@ -480,10 +490,8 @@ class InvoiceApp:
             if event == self.NAMES_COMBOBOX:
                 self.toggleButtonsDisabled(window, self.templateEditButtonsList, False)        
                     
-            if event == self.DELETE_BUTTON:
-                choice = sg.popup_yes_no('Are you sure you want to delete this template?', title='', font=self.textFont, icon=self.BLANK_ICO, keep_on_top=self.KEEP_ON_TOP)
-                
-                if choice == "Yes":
+            if event == self.DELETE_BUTTON:                
+                if self.displayPopUpMessage('Are you sure you want to delete this template?', True) == 'Yes':
                     with open(self.TEMPLATES_PATH, 'r') as f:
                         jsonData = json.load(f)
                         f.close()
@@ -500,7 +508,7 @@ class InvoiceApp:
                         
                     self.toggleButtonsDisabled(window, self.templateEditButtonsList, True)
                     
-                    sg.popup_quick_message('Template Deleted!', font=self.textFont, title='', icon=self.BLANK_ICO, keep_on_top=self.KEEP_ON_TOP, background_color="Black", text_color="White")
+                    self.displayPopUpMessage('Template Deleted!', False)
                 
             if event == self.EDIT_BUTTON:
                 self.selectedTemplateWindow(False, values[self.NAMES_COMBOBOX])
@@ -520,32 +528,31 @@ class InvoiceApp:
                     self.toggleButtonsDisabled(window, self.templateEditButtonsList, False)
             
             if event == self.DRAFT_BUTTON:
-                sg.popup_quick_message('Sending...', font=self.textFont, title='', icon=self.BLANK_ICO, keep_on_top=self.KEEP_ON_TOP, background_color="Black", text_color="White")
+                self.displayPopUpMessage('Sending...', False)
                 
                 gmail_create_draft(self.getSubject(values[self.NAMES_COMBOBOX]), self.getBody(values[self.NAMES_COMBOBOX]))
                 
-                sg.popup_quick_message('Draft Sent!', font=self.textFont, title='', icon=self.BLANK_ICO, keep_on_top=self.KEEP_ON_TOP, background_color="Black", text_color="White")
+                self.displayPopUpMessage('Draft Sent!', False)
+
                 
-            if event == self.DRAFT_ALL_BUTTON:
-                choice = sg.popup_yes_no('Are you sure you want to draft all templates?', title='', font=self.textFont, icon=self.BLANK_ICO, keep_on_top=self.KEEP_ON_TOP)
-                
-                if choice == 'Yes':
-                    sg.popup_quick_message('Sending...', font=self.textFont, title='', icon=self.BLANK_ICO, keep_on_top=self.KEEP_ON_TOP, background_color="Black", text_color="White")
+            if event == self.DRAFT_ALL_BUTTON:                
+                if self.displayPopUpMessage('Are you sure you want to draft all templates?', True) == 'Yes':
+                    self.displayPopUpMessage('Sending...', False)
                     
                     for name in self.getNamesList():
                         gmail_create_draft(self.getSubject(name), self.getBody(name))
                 
-                    sg.popup_quick_message('All Drafts Sent!', font=self.textFont, title='', icon=self.BLANK_ICO, keep_on_top=self.KEEP_ON_TOP, background_color="Black", text_color="White")
+                    self.displayPopUpMessage('All Drafts Sent!', False)
                 
             if event == self.SUBJECT_BUTTON:
                 pyperclip.copy(self.getSubject(values[self.NAMES_COMBOBOX]))
                 
-                sg.popup_quick_message('Copied Subject!', font=self.textFont, title='', icon=self.BLANK_ICO, keep_on_top=self.KEEP_ON_TOP, background_color="Black", text_color="White")
+                self.displayPopUpMessage('Copied Subject!', False)
                 
             if event == self.BODY_BUTTON:
                 pyperclip.copy(self.getBody(values[self.NAMES_COMBOBOX]))
                 
-                sg.popup_quick_message('Copied Body!', font=self.textFont, title='', icon=self.BLANK_ICO, keep_on_top=self.KEEP_ON_TOP, background_color="Black", text_color="White")
+                self.displayPopUpMessage('Copied Body!', False)
 
             if event == self.SETTINGS_BUTTON:
                 self.settingsWindow()
