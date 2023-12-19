@@ -23,6 +23,8 @@ class InvoiceApp:
     DEFAULT_THEME = 'DarkAmber'
     KEEP_ON_TOP = True
     OUTSIDE_TERM_TIME_MSG = '<OUTSIDE TERM TIME!>'
+    STARTING_WINDOW_X = 585
+    STARTING_WINDOW_Y = 427
 
     # Term Dates
     today = datetime.now()
@@ -50,10 +52,24 @@ class InvoiceApp:
 
     # Custom Fonts
     textFont = ('Lucida Console', 13)
+    
+    # Colours
+    READONLY_BACKGROUND_COLOUR = '#FF6961'
 
     # File Paths
     TEMPLATES_PATH = 'templates.json'
     SETTINGS_PATH = 'settings.ini'
+
+    # Config Sections
+    PREFERENCES_SECTION = 'Preferences'
+    STATE_SECTION = 'State'
+    
+    # Config Values
+    THEME = 'Theme'
+    EMAIL_MODE = 'email-mode'
+    CURRENT_TEMPLATE = 'current-template'
+    LAST_WINDOW_X = 'last-win-x'
+    LAST_WINDOW_Y = 'last-win-y'
 
     # Resource Paths
     RESOURCE_DIR = 'res/'
@@ -118,14 +134,20 @@ class InvoiceApp:
         if (not os.path.isfile(self.TEMPLATES_PATH)):
             with open(self.TEMPLATES_PATH, 'w') as f:
                 f.write('{}')
+                f.close()
         
         # Create settings file if it does not exist
         if (not os.path.isfile(self.SETTINGS_PATH)):
             with open(self.SETTINGS_PATH, 'w') as f:
-                f.write('[Preferences]\n')
-                f.write('Theme = ' + self.DEFAULT_THEME + '\n')
-                f.write(f'Email-Mode = {self.CLIPBOARD}\n')
-                f.write(f'Current-Template = \n')
+                f.write(f'[{self.PREFERENCES_SECTION}]\n')
+                f.write(f'{self.THEME} = ' + self.DEFAULT_THEME + '\n')
+                f.write(f'{self.EMAIL_MODE} = {self.CLIPBOARD}\n')
+            
+                f.write(f'\n[{self.STATE_SECTION}]\n')
+                f.write(f'{self.CURRENT_TEMPLATE} = \n')
+                f.write(f'{self.LAST_WINDOW_X} = {self.STARTING_WINDOW_X}\n')
+                f.write(f'{self.LAST_WINDOW_Y} = {self.STARTING_WINDOW_Y}\n')
+                f.close()
         
         # Create config parser
         self.config = ConfigParser()
@@ -137,13 +159,13 @@ class InvoiceApp:
         self.mainWindow()
         
     def getTheme(self) -> str:
-        return self.config.get('Preferences', 'Theme')
+        return self.config.get(self.PREFERENCES_SECTION, self.THEME)
         
     def getEmailMode(self) -> str:
-        return self.config.get('Preferences', 'Email-Mode')
+        return self.config.get(self.PREFERENCES_SECTION, self.EMAIL_MODE)
     
     def getCurrentTemplate(self) -> str:
-        return self.config.get('Preferences', 'Current-Template')  
+        return self.config.get(self.STATE_SECTION, self.CURRENT_TEMPLATE)  
         
     def getPhrases(self, startDate: datetime, endDate: datetime, half: str, term: str) -> list:
             
@@ -233,6 +255,7 @@ class InvoiceApp:
     def getBody(self, name: str) -> str:
         with open(self.TEMPLATES_PATH, 'r') as f:
             jsonData = json.load(f)
+            f.close()
         
         costOfLessons = jsonData[name][self.COST_INPUT]
         instrument = jsonData[name][self.INSTRUMENT_INPUT]
@@ -271,7 +294,7 @@ class InvoiceApp:
                     ]
             ]
         
-        window = sg.Window('Settings', layout, element_justification='l', size=(self.SETTINGS_WIDTH, self.SETTINGS_HEIGHT), modal=True, icon=self.MAIN_ICO, keep_on_top=self.KEEP_ON_TOP)
+        window = sg.Window(self.SETTINGS_BUTTON, layout, element_justification='l', size=(self.SETTINGS_WIDTH, self.SETTINGS_HEIGHT), modal=True, icon=self.MAIN_ICO, keep_on_top=self.KEEP_ON_TOP)
         
         # Event Loop
         while True:
@@ -279,18 +302,15 @@ class InvoiceApp:
             if event == self.EXIT_BUTTON or event == sg.WIN_CLOSED:
                 break
             if event == 'Randomise':
-                theme = random.choice(self.themeList)
-                window[self.THEME_COMBOBOX].update(value=theme)
+                window[self.THEME_COMBOBOX].update(value=random.choice(self.themeList))
                 
             if event == self.SAVE_BUTTON:
-                theme = values[self.THEME_COMBOBOX]
-                emailMode = values['Email Mode']
-
-                self.config.set('Preferences', 'Theme', theme)
-                self.config.set('Preferences', 'Email-Mode', emailMode)
+                self.config.set(self.PREFERENCES_SECTION, self.THEME, values[self.THEME_COMBOBOX])
+                self.config.set(self.PREFERENCES_SECTION, self.EMAIL_MODE, values['Email Mode'])
                 
                 with open(self.SETTINGS_PATH, 'w') as configfile:
                     self.config.write(configfile)
+                    configfile.close()
                 break
             
         window.close()
@@ -318,7 +338,7 @@ class InvoiceApp:
         layout = [
                     [
                         sg.Text('Recipient', font=self.textFont, pad=self.SELECT_PADDING), 
-                        sg.Input(size=self.INPUT_SIZE*2, font=self.textFont, key=self.RECIPIENT_INPUT, default_text=recipientDefault, disabled=recipientDisabled, disabled_readonly_background_color='#FF6961')
+                        sg.Input(size=self.INPUT_SIZE*2, font=self.textFont, key=self.RECIPIENT_INPUT, default_text=recipientDefault, disabled=recipientDisabled, disabled_readonly_background_color=self.READONLY_BACKGROUND_COLOUR)
                     ],
                     [
                         sg.Text('Cost of lesson  £', font=self.textFont, pad=self.SELECT_PADDING), 
@@ -450,10 +470,11 @@ class InvoiceApp:
             event, values = window.read()
             
             if event == sg.WIN_CLOSED or event == self.EXIT_BUTTON:                
-                self.config.set('Preferences', 'Current-Template', window[self.NAMES_COMBOBOX].get())
+                self.config.set(self.PREFERENCES_SECTION, self.CURRENT_TEMPLATE, window[self.NAMES_COMBOBOX].get())
                 
                 with open(self.SETTINGS_PATH, 'w') as configfile:
                     self.config.write(configfile)
+                    configfile.close()
                 break
                    
             if event == self.NAMES_COMBOBOX:
@@ -478,6 +499,8 @@ class InvoiceApp:
                         f.close()        
                         
                     self.toggleButtonsDisabled(window, self.templateEditButtonsList, True)
+                    
+                    sg.popup_quick_message('Template Deleted!', font=self.textFont, title='', icon=self.BLANK_ICO, keep_on_top=self.KEEP_ON_TOP, background_color="Black", text_color="White")
                 
             if event == self.EDIT_BUTTON:
                 self.selectedTemplateWindow(False, values[self.NAMES_COMBOBOX])
@@ -490,12 +513,11 @@ class InvoiceApp:
                         jsonData = json.load(f)
                         namesList = list(jsonData.keys())
                         namesList = sorted(namesList, key=str.lower)
+                        f.close()
                     
                     window[self.NAMES_COMBOBOX].update(value=name, values=namesList)
                     
                     self.toggleButtonsDisabled(window, self.templateEditButtonsList, False)
-                else:
-                    self.toggleButtonsDisabled(window, self.templateEditButtonsList, True)
             
             if event == self.DRAFT_BUTTON:
                 sg.popup_quick_message('Sending...', font=self.textFont, title='', icon=self.BLANK_ICO, keep_on_top=self.KEEP_ON_TOP, background_color="Black", text_color="White")
@@ -518,17 +540,33 @@ class InvoiceApp:
             if event == self.SUBJECT_BUTTON:
                 pyperclip.copy(self.getSubject(values[self.NAMES_COMBOBOX]))
                 
+                sg.popup_quick_message('Copied Subject!', font=self.textFont, title='', icon=self.BLANK_ICO, keep_on_top=self.KEEP_ON_TOP, background_color="Black", text_color="White")
+                
             if event == self.BODY_BUTTON:
                 pyperclip.copy(self.getBody(values[self.NAMES_COMBOBOX]))
+                
+                sg.popup_quick_message('Copied Body!', font=self.textFont, title='', icon=self.BLANK_ICO, keep_on_top=self.KEEP_ON_TOP, background_color="Black", text_color="White")
 
             if event == self.SETTINGS_BUTTON:
                 self.settingsWindow()
                 
                 sg.theme(self.getTheme())
+                
+                x, y = window.CurrentLocation()
+                
+                self.config.set(self.STATE_SECTION, self.LAST_WINDOW_X, x)
+                self.config.set(self.STATE_SECTION, self.LAST_WINDOW_Y, y)
+                
+                with open(self.SETTINGS_PATH, 'w') as configfile:
+                    self.config.write(configfile)
+                    configfile.close()
+                
                 window.close()
                 self.run()
                 
-                if (self.config.get('Preferences', 'Email-Mode') == self.CLIPBOARD):
+                window.move(self.config.get(self.STATE_SECTION, self.LAST_WINDOW_X), self.config.get(self.STATE_SECTION, self.LAST_WINDOW_Y))
+                
+                if (self.config.get(self.PREFERENCES_SECTION, self.EMAIL_MODE) == self.CLIPBOARD):
                     window[self.DRAFT_BUTTON].update(visible=False)
                     window[self.DRAFT_ALL_BUTTON].update(visible=False)
                     window[self.SUBJECT_BUTTON].update(visible=True)
