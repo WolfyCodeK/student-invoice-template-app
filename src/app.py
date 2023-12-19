@@ -1,4 +1,5 @@
 from math import floor
+import random
 import PySimpleGUI as sg
 import json
 import re
@@ -21,6 +22,7 @@ class InvoiceApp:
     # Default values
     DEFAULT_THEME = 'DarkAmber'
     KEEP_ON_TOP = True
+    OUTSIDE_TERM_TIME_MSG = '<OUTSIDE TERM TIME!>'
 
     # Term Dates
     today = datetime.now()
@@ -32,14 +34,14 @@ class InvoiceApp:
     # day = int(sg.popup_get_text('DAY', size= 10, keep_on_top=KEEP_ON_TOP))
     # currentDate = datetime(year, month, day)
 
-    autumn1 = [datetime(2023, 9, 4), datetime(2023, 10, 21)]
-    autumn2 = [datetime(2023, 10, 30), datetime(2023, 12, 23)]
+    autumn1 = [datetime(2023, 9, 4), datetime(2023, 10, 21), '1st', 'autumn']
+    autumn2 = [datetime(2023, 10, 30), datetime(2023, 12, 23), '2nd', 'autumn']
 
-    spring1 = [datetime(2024, 1, 8), datetime(2024, 2, 10)]
-    spring2  = [datetime(2024, 2, 19), datetime(2024, 3, 30)]
+    spring1 = [datetime(2024, 1, 8), datetime(2024, 2, 10), '1st', 'spring']
+    spring2  = [datetime(2024, 2, 19), datetime(2024, 3, 30), '2nd', 'spring']
 
-    summer1 = [datetime(2024, 4, 15), datetime(2024, 5, 25)]
-    summer2 = [datetime(2024, 5, 3), datetime(2024, 6, 24)]
+    summer1 = [datetime(2024, 4, 15), datetime(2024, 5, 25), '1st', 'summer']
+    summer2 = [datetime(2024, 5, 3), datetime(2024, 6, 24), '2nd', 'summer']
 
     termList = [autumn1, autumn2, spring1, spring2, summer1, summer2]
 
@@ -57,14 +59,17 @@ class InvoiceApp:
     RESOURCE_DIR = 'res/'
     BLANK_ICO = 'res/Blank.ico'
     MAIN_ICO = 'res/Email.ico'
+    
+    # Window Titles
+    EDIT_TEMPLATE_TITLE = 'Edit Template'
 
     # Window Sizes
-    MAIN_WIDTH = 600
+    MAIN_WIDTH = 750
     MAIN_HEIGHT = 225
-    SELECT_WIDTH = 350
+    SELECT_WIDTH = 450
     SELECT_HEIGHT = 350
-    SETTINGS_WIDTH = 475
-    SETTINGS_HEIGHT = 150
+    SETTINGS_WIDTH = 600
+    SETTINGS_HEIGHT = 200
 
     # Element Sizes
     MAIN_PADDING = 15
@@ -74,7 +79,7 @@ class InvoiceApp:
     # Button Values
     EDIT_BUTTON = 'Edit'
     EXIT_BUTTON = 'Exit'
-    NEW_BUTTON = 'New Template'
+    NEW_TEMPLATE_BUTTON = 'New Template'
     SAVE_BUTTON = 'Save & Close'
     DELETE_BUTTON = 'DELETE'
     DRAFT_BUTTON = 'Draft'
@@ -98,7 +103,7 @@ class InvoiceApp:
     COST_INPUT = 'Cost'
     INSTRUMENT_INPUT = 'Instrument'
     DAY_INPUT = 'Day'
-    STUDENT_INPUT = 'Student'
+    STUDENT_INPUT = 'Students'
     INPUT_SIZE = 15
     THEME_INPUT_SIZE = 21
 
@@ -143,7 +148,11 @@ class InvoiceApp:
     def getPhrases(self, startDate: datetime, endDate: datetime, half: str, term: str) -> list:
             
         bodyPhrase = str(self.numToWeekday(startDate.isoweekday())) + ' ' + str(startDate.day) + self.getDaySuffix(startDate.day) + str(self.numToMonth(startDate.month)) + ' to and including ' + str(self.numToWeekday(endDate.isoweekday())) + ' ' + str(endDate.day) + self.getDaySuffix(endDate.day) + str(self.numToMonth(endDate.month))
-        currentTerm = [half + ' half ' + term + ' term ' + str(startDate.year), half + ' Half ' + term.capitalize() + ' Term ' + str(endDate.year), bodyPhrase]
+        
+        currentTerm = [
+            half + ' half ' + term + ' term ' + str(startDate.year), 
+            half + ' Half ' + term.capitalize() + ' Term ' + str(endDate.year), bodyPhrase
+        ]
         
         return currentTerm
 
@@ -165,7 +174,7 @@ class InvoiceApp:
         return timedelta(weeks=(((monday2 - monday1).days / 7) + 1))
 
     def whichTerm(self, date: datetime, day: str) -> tuple:
-        currentTerm = ['<DATE>', '<DATE>', '<DATE>'] 
+        currentTerm = [self.OUTSIDE_TERM_TIME_MSG, self.OUTSIDE_TERM_TIME_MSG, self.OUTSIDE_TERM_TIME_MSG] 
 
         for term in self.termList:
             if (date >= term[0] and date <= term[1]):
@@ -173,7 +182,7 @@ class InvoiceApp:
                 dateGap = self.getTermLengthInWeeks(term[0], term[1])
                 endDate = startDate + dateGap
         
-                currentTerm = self.getPhrases(startDate, endDate - timedelta(weeks=1), '1st', 'autumn')
+                currentTerm = self.getPhrases(startDate, endDate - timedelta(weeks=1), term[2], term[3])
                 
                 return currentTerm, int(dateGap.days / 7)
             
@@ -246,7 +255,7 @@ class InvoiceApp:
                     [
                         sg.Text(self.THEME_COMBOBOX, font=self.textFont, pad=self.SETTINGS_PADDING), 
                         sg.Combo(self.themeList, font=self.textFont, size=self.THEME_INPUT_SIZE, readonly=True, key=self.THEME_COMBOBOX, default_value=self.getTheme()),
-                        sg.Button('Randomise', font=self.textFont)
+                        sg.Button('Randomise', font=self.textFont, pad=self.SETTINGS_PADDING)
                     ],
                     [
                         sg.Text('<Email Mode>', font=self.textFont, pad=self.SETTINGS_PADDING), 
@@ -262,7 +271,7 @@ class InvoiceApp:
                     ]
             ]
         
-        window = sg.Window('', layout, element_justification='l', size=(self.SETTINGS_WIDTH, self.SETTINGS_HEIGHT), modal=True, icon=self.BLANK_ICO, keep_on_top=self.KEEP_ON_TOP)
+        window = sg.Window('Settings', layout, element_justification='l', size=(self.SETTINGS_WIDTH, self.SETTINGS_HEIGHT), modal=True, icon=self.MAIN_ICO, keep_on_top=self.KEEP_ON_TOP)
         
         # Event Loop
         while True:
@@ -270,8 +279,9 @@ class InvoiceApp:
             if event == self.EXIT_BUTTON or event == sg.WIN_CLOSED:
                 break
             if event == 'Randomise':
-                window[self.THEME_COMBOBOX].update(value='')
-                theme = ''
+                theme = random.choice(self.themeList)
+                window[self.THEME_COMBOBOX].update(value=theme)
+                
             if event == self.SAVE_BUTTON:
                 theme = values[self.THEME_COMBOBOX]
                 emailMode = values['Email Mode']
@@ -338,7 +348,12 @@ class InvoiceApp:
                     ]
                 ]
         
-        window = sg.Window('', layout, element_justification='l', size=(self.SELECT_WIDTH, self.SELECT_HEIGHT), modal=True, icon=self.BLANK_ICO, keep_on_top=self.KEEP_ON_TOP)
+        if isNewTemplate:
+            templateTitle = self.NEW_TEMPLATE_BUTTON
+        else:
+            templateTitle = self.EDIT_TEMPLATE_TITLE
+        
+        window = sg.Window(templateTitle, layout, element_justification='l', size=(self.SELECT_WIDTH, self.SELECT_HEIGHT), modal=True, icon=self.MAIN_ICO, keep_on_top=self.KEEP_ON_TOP)
         
         # Event Loop
         while True:
@@ -402,7 +417,7 @@ class InvoiceApp:
                             [
                                 sg.Button(self.DELETE_BUTTON, font=self.textFont, disabled=supportButtonsDisabled),
                                 sg.Push(),
-                                sg.Button(self.NEW_BUTTON, font=self.textFont), 
+                                sg.Button(self.NEW_TEMPLATE_BUTTON, font=self.textFont), 
                                 sg.Button(self.SETTINGS_BUTTON, font=self.textFont),
                                 sg.Button(self.EXIT_BUTTON, font=self.textFont)
                             ]       
@@ -467,7 +482,7 @@ class InvoiceApp:
             if event == self.EDIT_BUTTON:
                 self.selectedTemplateWindow(False, values[self.NAMES_COMBOBOX])
                 
-            if event == self.NEW_BUTTON:
+            if event == self.NEW_TEMPLATE_BUTTON:
                 name = self.selectedTemplateWindow(True, '')
                 
                 if name != '':
@@ -483,15 +498,22 @@ class InvoiceApp:
                     self.toggleButtonsDisabled(window, self.templateEditButtonsList, True)
             
             if event == self.DRAFT_BUTTON:
+                sg.popup_quick_message('Sending...', font=self.textFont, title='', icon=self.BLANK_ICO, keep_on_top=self.KEEP_ON_TOP, background_color="Black", text_color="White")
+                
                 gmail_create_draft(self.getSubject(values[self.NAMES_COMBOBOX]), self.getBody(values[self.NAMES_COMBOBOX]))
                 
                 sg.popup_quick_message('Draft Sent!', font=self.textFont, title='', icon=self.BLANK_ICO, keep_on_top=self.KEEP_ON_TOP, background_color="Black", text_color="White")
                 
             if event == self.DRAFT_ALL_BUTTON:
-                for name in self.getNamesList():
-                    gmail_create_draft(self.getSubject(values[name]), self.getBody(values[name]))
+                choice = sg.popup_yes_no('Are you sure you want to draft all templates?', title='', font=self.textFont, icon=self.BLANK_ICO, keep_on_top=self.KEEP_ON_TOP)
                 
-                sg.popup_quick_message('All Drafts Sent!', font=self.textFont, title='', icon=self.BLANK_ICO, keep_on_top=self.KEEP_ON_TOP, background_color="Black", text_color="White")
+                if choice == 'Yes':
+                    sg.popup_quick_message('Sending...', font=self.textFont, title='', icon=self.BLANK_ICO, keep_on_top=self.KEEP_ON_TOP, background_color="Black", text_color="White")
+                    
+                    for name in self.getNamesList():
+                        gmail_create_draft(self.getSubject(name), self.getBody(name))
+                
+                    sg.popup_quick_message('All Drafts Sent!', font=self.textFont, title='', icon=self.BLANK_ICO, keep_on_top=self.KEEP_ON_TOP, background_color="Black", text_color="White")
                 
             if event == self.SUBJECT_BUTTON:
                 pyperclip.copy(self.getSubject(values[self.NAMES_COMBOBOX]))
