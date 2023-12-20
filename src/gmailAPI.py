@@ -22,10 +22,11 @@ class GmailAPI():
     ]
 
     PARENT_FOLDER = "lib/"
-
-    # Create resources directory if it does not exist
-    if not os.path.exists(PARENT_FOLDER):
-        os.makedirs(PARENT_FOLDER)
+        
+    def __init__(self) -> None:
+        # Create resources directory if it does not exist
+        if not os.path.exists(self.PARENT_FOLDER):
+            os.makedirs(self.PARENT_FOLDER)
         
     def missingCredentials():
         messagebox.showerror(title="Missing files", message='ERROR: Missing credentials, cannot access google API.')  
@@ -77,11 +78,10 @@ class GmailAPI():
 
     def gmail_create_draft(self, subject: str, body: str):
         creds = None
-        # The file token.json stores the user's access and refresh tokens, and is
-        # created automatically when the authorization flow completes for the first
-        # time.
+        # The file token.json stores the user's access and refresh tokens, and is created automatically when the authorization flow completes for the first time.
         if os.path.exists(f'{self.PARENT_FOLDER}token.json'):
             creds = Credentials.from_authorized_user_file(f'{self.PARENT_FOLDER}token.json', self.SCOPES)
+            
         # If there are no (valid) credentials available, let the user log in.
         if not creds or not creds.valid:
             if creds and creds.expired and creds.refresh_token:
@@ -121,12 +121,11 @@ class GmailAPI():
                     'raw': encoded_message
                 }
             }
-            # pylint: disable=E1101
-            draft = service.users().drafts().create(userId="me",
-                                                    body=create_message).execute()
-
-            #print(F'Draft id: {draft["id"]}\nDraft message: {draft["message"]}\n')
-            #print(f'Recipient: {recipient}\nSubject: {subject}\nBody: {body}')
+            
+            draft = service.users().drafts().create(
+                userId="me",
+                body=create_message
+            ).execute()
 
         except HttpError as error:
             print(F'An error occurred: {error}')
