@@ -6,7 +6,7 @@ import re
 import pyperclip
 from datetime import datetime, timedelta
 from enum import IntEnum
-from gmailAPI import gmail_create_draft
+from gmailAPI import GmailAPI
 import os.path
 from configparser import ConfigParser
 
@@ -154,6 +154,9 @@ class InvoiceApp:
         self.config.read(self.SETTINGS_PATH)
             
         sg.theme(self.getTheme())
+        
+        # Create gmail API object
+        self.gmailAPI = GmailAPI()
     
     def run(self):
         self.mainWindow()
@@ -530,7 +533,7 @@ class InvoiceApp:
             if event == self.DRAFT_BUTTON:
                 self.displayPopUpMessage('Sending...', False)
                 
-                gmail_create_draft(self.getSubject(values[self.NAMES_COMBOBOX]), self.getBody(values[self.NAMES_COMBOBOX]))
+                self.gmailAPI.gmail_create_draft(self.getSubject(values[self.NAMES_COMBOBOX]), self.getBody(values[self.NAMES_COMBOBOX]))
                 
                 self.displayPopUpMessage('Draft Sent!', False)
 
@@ -540,7 +543,7 @@ class InvoiceApp:
                     self.displayPopUpMessage('Sending...', False)
                     
                     for name in self.getNamesList():
-                        gmail_create_draft(self.getSubject(name), self.getBody(name))
+                        self.gmailAPI.gmail_create_draft(self.getSubject(name), self.getBody(name))
                 
                     self.displayPopUpMessage('All Drafts Sent!', False)
                 
