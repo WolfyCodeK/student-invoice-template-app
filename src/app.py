@@ -87,6 +87,9 @@ class InvoiceApp:
     SETTINGS_WIDTH = 600
     SETTINGS_HEIGHT = 200
 
+    WIN_OFFSET_X = 550 / 2
+    WIN_OFFSET_Y = 225 / 2
+
     # Element Sizes
     MAIN_PADDING = 15
     SELECT_PADDING = 10
@@ -122,6 +125,10 @@ class InvoiceApp:
     STUDENT_INPUT = 'Students'
     INPUT_SIZE = 15
     THEME_INPUT_SIZE = 21
+
+    SINGLE_DRAFT_THREAD_END_KEY = ('-SINGLE DRAFT THREAD-', '-SINGLE DRAFT THREAD ENDED-')
+    
+    ALL_DRAFT_THREAD_END_KEY = ('-ALL DRAFT THREAD-', '-ALL DRAFT THREAD ENDED-')
 
     instruments_list = ['piano', 'drum', 'guitar', 'vocal', 'music', 'singing', 'bass guitar', 'classical guitar']
 
@@ -278,11 +285,11 @@ class InvoiceApp:
 
     def display_pop_up_message(self, title: str, question: bool) -> None|str:
         if question:
-             choice = sg.popup_yes_no(title, title='', font=self.text_font, icon=self.BLANK_ICO, keep_on_top=self.KEEP_ON_TOP)
+             choice = sg.popup_yes_no(title, title='', font=self.text_font, icon=self.BLANK_ICO, keep_on_top=self.KEEP_ON_TOP, location=(self.get_last_win_x() + self.WIN_OFFSET_X, self.get_last_win_y() + self.WIN_OFFSET_Y))
              
              return choice
         else:
-            sg.popup_quick_message(title, font=self.text_font, title='', icon=self.BLANK_ICO, keep_on_top=self.KEEP_ON_TOP, background_color="Black", text_color="White")
+            sg.popup_quick_message(title, font=self.text_font, title='', icon=self.BLANK_ICO, keep_on_top=self.KEEP_ON_TOP, background_color="Black", text_color="White", location=(self.get_last_win_x() + self.WIN_OFFSET_X, self.get_last_win_y() + self.WIN_OFFSET_Y)) 
             
             return None
         
@@ -297,7 +304,33 @@ class InvoiceApp:
             self.config.write(config_file)
             config_file.close()       
             
-    def settings_window(self) -> None:        
+    def create_draft_for_template(self, name: str):
+        self.display_pop_up_message('Sending...', False)
+        
+        self.gmail_API.gmail_create_draft(self.get_subject(name), self.get_body(name))
+        
+    def get_last_win_x(self) -> int:
+        return int(self.config.get(self.STATE_SECTION, self.LAST_WINDOW_X))
+    
+    def get_last_win_y(self) -> int:
+        return int(self.config.get(self.STATE_SECTION, self.LAST_WINDOW_Y))
+    
+    def save_win_location(self, window: sg.Window):
+        x, y = window.CurrentLocation()
+                
+        self.config.set(self.STATE_SECTION, self.LAST_WINDOW_X, str(x)) 
+        self.config.set(self.STATE_SECTION, self.LAST_WINDOW_Y, str(y))
+        
+        self.save_config()
+    
+    def settings_window(self) -> bool:    
+        """Create the settings window.
+
+        Returns:
+            bool: True if user saves the settings.
+        """
+        saved = False
+            
         layout = [
                     [
                         sg.Text(self.THEME_COMBOBOX, font=self.text_font, pad=self.SETTINGS_PADDING), 
@@ -318,7 +351,10 @@ class InvoiceApp:
                     ]
             ]
         
-        window = sg.Window(self.SETTINGS_BUTTON, layout, element_justification='l', size=(self.SETTINGS_WIDTH, self.SETTINGS_HEIGHT), modal=True, icon=self.MAIN_ICO, keep_on_top=self.KEEP_ON_TOP)
+        window = sg.Window(self.SETTINGS_BUTTON, layout, element_justification='l', size=(self.SETTINGS_WIDTH, self.SETTINGS_HEIGHT), modal=True, icon=self.MAIN_ICO, keep_on_top=self.KEEP_ON_TOP, location=(self.get_last_win_x() + self.WIN_OFFSET_X, self.get_last_win_y() + self.WIN_OFFSET_Y))
+        
+        # Make initial window read
+        window.read(timeout=0)
         
         # Event Loop
         while True:
@@ -333,9 +369,14 @@ class InvoiceApp:
                 self.config.set(self.PREFERENCES_SECTION, self.EMAIL_MODE, values['Email Mode'])
                 
                 self.save_config()
+                
+                saved = True
+                
                 break
             
         window.close()
+        
+        return saved
 
     def selected_template_window(self, is_new_template: bool, name: str) -> str:
         with open(self.TEMPLATES_PATH, 'r') as f:
@@ -395,7 +436,10 @@ class InvoiceApp:
         else:
             template_title = self.EDIT_TEMPLATE_TITLE
         
-        window = sg.Window(template_title, layout, element_justification='l', size=(self.SELECT_WIDTH, self.SELECT_HEIGHT), modal=True, icon=self.MAIN_ICO, keep_on_top=self.KEEP_ON_TOP)
+        window = sg.Window(template_title, layout, element_justification='l', size=(self.SELECT_WIDTH, self.SELECT_HEIGHT), modal=True, icon=self.MAIN_ICO, keep_on_top=self.KEEP_ON_TOP, location=(self.get_last_win_x()+ self.WIN_OFFSET_X, self.get_last_win_y() + self.WIN_OFFSET_Y))
+        
+        # Make initial window read
+        window.read(timeout=0)
         
         # Event Loop
         while True:
@@ -436,7 +480,7 @@ class InvoiceApp:
         
         return name
 
-    def main_window(self) -> None:        
+    def get_main_window(self) -> sg.Window:
         if (self.get_email_mode() == self.CLIPBOARD):
             sub_body_enabled = True
             draft_enabled = False
@@ -482,14 +526,22 @@ class InvoiceApp:
                     ]
                 ]
 
-        window = sg.Window('Invoice Templates', layout, element_justification='l', size=(self.MAIN_WIDTH, self.MAIN_HEIGHT), icon=self.MAIN_ICO, keep_on_top=self.KEEP_ON_TOP)
+        window = sg.Window('Invoice Templates', layout, element_justification='l', size=(self.MAIN_WIDTH, self.MAIN_HEIGHT), icon=self.MAIN_ICO, keep_on_top=self.KEEP_ON_TOP, location=(self.get_last_win_x(), self.get_last_win_y()))
+        
+        # Make initial window read
+        window.read(timeout=0)
+        
+        return window
+
+    def main_window(self) -> None:        
+        window = self.get_main_window()  
         
         # Event Loop
         while True:
             event, values = window.read()
             
             if event == sg.WIN_CLOSED or event == self.EXIT_BUTTON:                
-                self.config.set(self.PREFERENCES_SECTION, self.CURRENT_TEMPLATE, window[self.NAMES_COMBOBOX].get())
+                self.config.set(self.STATE_SECTION, self.CURRENT_TEMPLATE, window[self.NAMES_COMBOBOX].get())
                 
                 self.save_config()
                 break
@@ -516,6 +568,8 @@ class InvoiceApp:
                     self.display_pop_up_message('Template Deleted!', False)
                 
             if event == self.EDIT_BUTTON:
+                self.save_win_location(window)
+                
                 self.selected_template_window(False, values[self.NAMES_COMBOBOX])
                 
             if event == self.NEW_TEMPLATE_BUTTON:
@@ -527,21 +581,19 @@ class InvoiceApp:
                     self.toggle_buttons_disabled(window, self.template_edit_buttons_list, False)
             
             if event == self.DRAFT_BUTTON:
-                self.display_pop_up_message('Sending...', False)
-                
-                self.gmail_API.gmail_create_draft(self.get_subject(values[self.NAMES_COMBOBOX]), self.get_body(values[self.NAMES_COMBOBOX]))
-                
-                self.display_pop_up_message('Draft Sent!', False)
-
+                window.start_thread(lambda: self.create_draft_for_template(values[self.NAMES_COMBOBOX]), self.SINGLE_DRAFT_THREAD_END_KEY)
                 
             if event == self.DRAFT_ALL_BUTTON:                
                 if self.display_pop_up_message('Are you sure you want to draft all templates?', True) == 'Yes':
-                    self.display_pop_up_message('Sending...', False)
-                    
+
                     for name in self.get_names_list():
-                        self.gmail_API.gmail_create_draft(self.get_subject(name), self.get_body(name))
+                        window.start_thread(lambda: self.create_draft_for_template(name), self.ALL_DRAFT_THREAD_END_KEY)
                 
-                    self.display_pop_up_message('All Drafts Sent!', False)
+            if event[0] == self.SINGLE_DRAFT_THREAD_END_KEY[0]:
+                self.display_pop_up_message('Draft Sent!', False)
+                
+            if event[0] == self.ALL_DRAFT_THREAD_END_KEY[0]:
+                self.display_pop_up_message('All Drafts Sent!', False)
                 
             if event == self.SUBJECT_BUTTON:
                 pyperclip.copy(self.get_subject(values[self.NAMES_COMBOBOX]))
@@ -551,28 +603,17 @@ class InvoiceApp:
             if event == self.BODY_BUTTON:
                 pyperclip.copy(self.get_body(values[self.NAMES_COMBOBOX]))
                 
-                self.display_pop_up_message('Copied Body!', False)
+                self.display_pop_up_message('Copied Body!', False) 
 
             if event == self.SETTINGS_BUTTON:
-                self.settings_window()
+                self.save_win_location(window)
                 
-                sg.theme(self.get_theme())
+                # Reload window if settings were saved
+                if self.settings_window():
+                    sg.theme(self.get_theme())
+                    window.close()
+                    window = self.get_main_window()
+                    
+                    self.display_pop_up_message('Settings Saved!', False)
                 
-                x, y = window.CurrentLocation()
-                
-                self.config.set(self.STATE_SECTION, self.LAST_WINDOW_X, x)    
-                self.config.set(self.STATE_SECTION, self.LAST_WINDOW_Y, y)
-                
-                self.save_config()
-                
-                window.close()
-                self.run()
-                
-                window.move(self.config.get(self.STATE_SECTION, self.LAST_WINDOW_X), self.config.get(self.STATE_SECTION, self.LAST_WINDOW_Y))
-                
-                if (self.get_email_mode() == self.CLIPBOARD):
-                    self.toggle_clipboard_visible(window, True)
-                else:
-                    self.toggle_clipboard_visible(window, False)
-
         window.close()
