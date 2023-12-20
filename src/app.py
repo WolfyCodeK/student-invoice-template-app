@@ -236,7 +236,7 @@ class InvoiceApp:
         for button in button_list:
             window[button].update(disabled=disabled)
 
-    def get_names_list(self):
+    def get_names_list(self) -> list[str]:
         with open(self.TEMPLATES_PATH, 'r') as f:
             json_data = json.load(f)
             names_list = list(json_data.keys())
@@ -285,8 +285,19 @@ class InvoiceApp:
             sg.popup_quick_message(title, font=self.text_font, title='', icon=self.BLANK_ICO, keep_on_top=self.KEEP_ON_TOP, background_color="Black", text_color="White")
             
             return None
+        
+    def toggle_clipboard_visible(self, window: sg.Window, clipboard_visible: bool) -> None:
+            window[self.DRAFT_BUTTON].update(visible=not clipboard_visible)
+            window[self.DRAFT_ALL_BUTTON].update(visible=not clipboard_visible)
+            window[self.SUBJECT_BUTTON].update(visible=clipboard_visible)
+            window[self.BODY_BUTTON].update(visible=clipboard_visible)
             
-    def settings_window(self):        
+    def save_config(self) -> ConfigParser:
+        with open(self.SETTINGS_PATH, 'w') as config_file:
+            self.config.write(config_file)
+            config_file.close()       
+            
+    def settings_window(self) -> None:        
         layout = [
                     [
                         sg.Text(self.THEME_COMBOBOX, font=self.text_font, pad=self.SETTINGS_PADDING), 
@@ -321,9 +332,7 @@ class InvoiceApp:
                 self.config.set(self.PREFERENCES_SECTION, self.THEME, values[self.THEME_COMBOBOX])
                 self.config.set(self.PREFERENCES_SECTION, self.EMAIL_MODE, values['Email Mode'])
                 
-                with open(self.SETTINGS_PATH, 'w') as configfile:
-                    self.config.write(configfile)
-                    configfile.close()
+                self.save_config()
                 break
             
         window.close()
@@ -332,15 +341,15 @@ class InvoiceApp:
         with open(self.TEMPLATES_PATH, 'r') as f:
             json_data = json.load(f)
             f.close()
-            
-        recipient_default = ''
-        recipient_disabled = False
-        cost_default = ''
-        instrument_default = ''
-        day_default = ''
-        student_default = ''
         
-        if not is_new_template:
+        if is_new_template:
+            recipient_default = ''
+            recipient_disabled = False
+            cost_default = ''
+            instrument_default = ''
+            day_default = ''
+            student_default = ''
+        else:
             recipient_default = name
             recipient_disabled = True
             cost_default = json_data[name][self.COST_INPUT]   
@@ -422,16 +431,12 @@ class InvoiceApp:
                         with open(self.TEMPLATES_PATH, 'w') as f:
                             f.write(json.dumps(json_data))
                             f.close()
-                            
-                        break
-                
+                        break        
         window.close()
         
         return name
 
-    def main_window(self):
-        names_list = self.get_names_list()
-        
+    def main_window(self) -> None:        
         if (self.get_email_mode() == self.CLIPBOARD):
             sub_body_enabled = True
             draft_enabled = False
@@ -461,7 +466,7 @@ class InvoiceApp:
                     [
                         [
                             sg.Text('<Templates>', font=self.text_font),
-                            sg.Combo(names_list, enable_events=True, default_value=current_template, pad=self.MAIN_PADDING, key=self.NAMES_COMBOBOX, size=15, font=self.text_font, readonly=True),
+                            sg.Combo(self.get_names_list(), enable_events=True, default_value=current_template, pad=self.MAIN_PADDING, key=self.NAMES_COMBOBOX, size=15, font=self.text_font, readonly=True),
                             sg.Button(self.EDIT_BUTTON, font=self.text_font, disabled=support_buttons_disabled),
                             sg.Button(self.DRAFT_BUTTON, font=self.text_font, disabled=support_buttons_disabled, visible=draft_enabled),
                             sg.Button(self.DRAFT_ALL_BUTTON, font=self.text_font, disabled=support_buttons_disabled, visible=draft_enabled),
@@ -486,9 +491,7 @@ class InvoiceApp:
             if event == sg.WIN_CLOSED or event == self.EXIT_BUTTON:                
                 self.config.set(self.PREFERENCES_SECTION, self.CURRENT_TEMPLATE, window[self.NAMES_COMBOBOX].get())
                 
-                with open(self.SETTINGS_PATH, 'w') as config_file:
-                    self.config.write(config_file)
-                    config_file.close()
+                self.save_config()
                 break
                    
             if event == self.NAMES_COMBOBOX:
@@ -502,13 +505,11 @@ class InvoiceApp:
                         
                     del json_data[values[self.NAMES_COMBOBOX]]   
                     
-                    names_list = list(json_data.keys())
-                    names_list = sorted(names_list, key=str.lower)
-                    window[self.NAMES_COMBOBOX].update(values=names_list) 
-                    
                     with open(self.TEMPLATES_PATH, 'w') as f:
                         f.write(json.dumps(json_data))   
-                        f.close()        
+                        f.close()   
+                    
+                    window[self.NAMES_COMBOBOX].update(values=self.get_names_list())                  
                         
                     self.toggle_buttons_disabled(window, self.template_edit_buttons_list, True)
                     
@@ -521,13 +522,7 @@ class InvoiceApp:
                 name = self.selected_template_window(True, '')
                 
                 if name != '':
-                    with open(self.TEMPLATES_PATH, 'r') as f:
-                        json_data = json.load(f)
-                        names_list = list(json_data.keys())
-                        names_list = sorted(names_list, key=str.lower)
-                        f.close()
-                    
-                    window[self.NAMES_COMBOBOX].update(value=name, values=names_list)
+                    window[self.NAMES_COMBOBOX].update(value=name, values=self.get_names_list())
                     
                     self.toggle_buttons_disabled(window, self.template_edit_buttons_list, False)
             
@@ -568,24 +563,16 @@ class InvoiceApp:
                 self.config.set(self.STATE_SECTION, self.LAST_WINDOW_X, x)    
                 self.config.set(self.STATE_SECTION, self.LAST_WINDOW_Y, y)
                 
-                with open(self.SETTINGS_PATH, 'w') as config_file:
-                    self.config.write(config_file)
-                    config_file.close()
+                self.save_config()
                 
                 window.close()
                 self.run()
                 
                 window.move(self.config.get(self.STATE_SECTION, self.LAST_WINDOW_X), self.config.get(self.STATE_SECTION, self.LAST_WINDOW_Y))
                 
-                if (self.config.get(self.PREFERENCES_SECTION, self.EMAIL_MODE) == self.CLIPBOARD):
-                    window[self.DRAFT_BUTTON].update(visible=False)
-                    window[self.DRAFT_ALL_BUTTON].update(visible=False)
-                    window[self.SUBJECT_BUTTON].update(visible=True)
-                    window[self.BODY_BUTTON].update(visible=True)
+                if (self.get_email_mode() == self.CLIPBOARD):
+                    self.toggle_clipboard_visible(window, True)
                 else:
-                    window[self.DRAFT_BUTTON].update(visible=True)
-                    window[self.DRAFT_ALL_BUTTON].update(visible=True)
-                    window[self.SUBJECT_BUTTON].update(visible=False)
-                    window[self.BODY_BUTTON].update(visible=False)
+                    self.toggle_clipboard_visible(window, False)
 
         window.close()
