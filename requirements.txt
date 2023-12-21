@@ -1,6 +1,6 @@
-cryptography==41.0.6
-google_api_python_client==1.8.0
-google_auth_oauthlib==1.0.0
-protobuf==3.20.3
+cryptography==41.0.7
+google_api_python_client==2.111.0
+google_auth_oauthlib==1.1.0
+protobuf==4.25.1
 pyperclip==1.8.2
 PySimpleGUI==4.60.5
