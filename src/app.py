@@ -285,9 +285,9 @@ class InvoiceApp:
 
     def display_pop_up_message(self, title: str, question: bool) -> None|str:
         if question:
-             choice = sg.popup_yes_no(title, title='', font=self.text_font, icon=self.BLANK_ICO, keep_on_top=self.KEEP_ON_TOP, location=(self.get_last_win_x() + self.WIN_OFFSET_X, self.get_last_win_y() + self.WIN_OFFSET_Y))
-             
-             return choice
+            choice = sg.popup_yes_no(title, title='', font=self.text_font, icon=self.BLANK_ICO, keep_on_top=self.KEEP_ON_TOP, location=(self.get_last_win_x() + self.WIN_OFFSET_X, self.get_last_win_y() + self.WIN_OFFSET_Y))
+    
+            return choice
         else:
             sg.popup_quick_message(title, font=self.text_font, title='', icon=self.BLANK_ICO, keep_on_top=self.KEEP_ON_TOP, background_color="Black", text_color="White", location=(self.get_last_win_x() + self.WIN_OFFSET_X, self.get_last_win_y() + self.WIN_OFFSET_Y)) 
             
@@ -299,7 +299,7 @@ class InvoiceApp:
             window[self.SUBJECT_BUTTON].update(visible=clipboard_visible)
             window[self.BODY_BUTTON].update(visible=clipboard_visible)
             
-    def save_config(self) -> ConfigParser:
+    def save_config(self):
         with open(self.SETTINGS_PATH, 'w') as config_file:
             self.config.write(config_file)
             config_file.close()       
@@ -444,6 +444,7 @@ class InvoiceApp:
         # Event Loop
         while True:
             event, values = window.read()
+            
             if event == self.EXIT_BUTTON or event == sg.WIN_CLOSED:
                 break
             if event == self.SAVE_BUTTON: 
@@ -526,7 +527,7 @@ class InvoiceApp:
                     ]
                 ]
 
-        window = sg.Window('Invoice Templates', layout, element_justification='l', size=(self.MAIN_WIDTH, self.MAIN_HEIGHT), icon=self.MAIN_ICO, keep_on_top=self.KEEP_ON_TOP, location=(self.get_last_win_x(), self.get_last_win_y()))
+        window = sg.Window('Invoice Templates', layout, element_justification='l', size=(self.MAIN_WIDTH, self.MAIN_HEIGHT), icon=self.MAIN_ICO, keep_on_top=self.KEEP_ON_TOP, location=(self.get_last_win_x(), self.get_last_win_y()), enable_close_attempted_event=True)
         
         # Make initial window read
         window.read(timeout=0)
@@ -540,12 +541,13 @@ class InvoiceApp:
         while True:
             event, values = window.read()
             
-            if event == sg.WIN_CLOSED or event == self.EXIT_BUTTON:                
-                self.config.set(self.STATE_SECTION, self.CURRENT_TEMPLATE, window[self.NAMES_COMBOBOX].get())
+            if event == sg.WINDOW_CLOSE_ATTEMPTED_EVENT or event == self.EXIT_BUTTON:
+                self.config.set(self.STATE_SECTION, self.CURRENT_TEMPLATE, str(values[self.NAMES_COMBOBOX]))
                 
                 self.save_config()
+                
                 break
-                   
+
             if event == self.NAMES_COMBOBOX:
                 self.toggle_buttons_disabled(window, self.template_edit_buttons_list, False)        
                     
