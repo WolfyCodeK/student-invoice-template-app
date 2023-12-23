@@ -20,7 +20,7 @@ class InvoiceApp:
     theme_list = ['Black', 'BlueMono', 'BluePurple', 'BrightColors', 'BrownBlue', 'Dark', 'Dark2', 'DarkAmber', 'DarkBlack', 'DarkBlack1', 'DarkBlue', 'DarkBlue1', 'DarkBlue10', 'DarkBlue11', 'DarkBlue12', 'DarkBlue13', 'DarkBlue14', 'DarkBlue15', 'DarkBlue16', 'DarkBlue17', 'DarkBlue2', 'DarkBlue3', 'DarkBlue4', 'DarkBlue5', 'DarkBlue6', 'DarkBlue7', 'DarkBlue8', 'DarkBlue9', 'DarkBrown', 'DarkBrown1', 'DarkBrown2', 'DarkBrown3', 'DarkBrown4', 'DarkBrown5', 'DarkBrown6', 'DarkGreen', 'DarkGreen1', 'DarkGreen2', 'DarkGreen3', 'DarkGreen4', 'DarkGreen5', 'DarkGreen6', 'DarkGrey', 'DarkGrey1', 'DarkGrey2', 'DarkGrey3', 'DarkGrey4', 'DarkGrey5', 'DarkGrey6', 'DarkGrey7', 'DarkPurple', 'DarkPurple1', 'DarkPurple2', 'DarkPurple3', 'DarkPurple4', 'DarkPurple5', 'DarkPurple6', 'DarkRed', 'DarkRed1', 'DarkRed2', 'DarkTanBlue', 'DarkTeal', 'DarkTeal1', 'DarkTeal10', 'DarkTeal11', 'DarkTeal12', 'DarkTeal2', 'DarkTeal3', 'DarkTeal4', 'DarkTeal5', 'DarkTeal6', 'DarkTeal7', 'DarkTeal8', 'DarkTeal9', 'Default', 'Default1', 'DefaultNoMoreNagging', 'Green', 'GreenMono', 'GreenTan', 'HotDogStand', 'Kayak', 'LightBlue', 'LightBlue1', 'LightBlue2', 'LightBlue3', 'LightBlue4', 'LightBlue5', 'LightBlue6', 'LightBlue7', 'LightBrown', 'LightBrown1', 'LightBrown10', 'LightBrown11', 'LightBrown12', 'LightBrown13', 'LightBrown2', 'LightBrown3', 'LightBrown4', 'LightBrown5', 'LightBrown6', 'LightBrown7', 'LightBrown8', 'LightBrown9', 'LightGray1', 'LightGreen', 'LightGreen1', 'LightGreen10', 'LightGreen2', 'LightGreen3', 'LightGreen4', 'LightGreen5', 'LightGreen6', 'LightGreen7', 'LightGreen8', 'LightGreen9', 'LightGrey', 'LightGrey1', 'LightGrey2', 'LightGrey3', 'LightGrey4', 'LightGrey5', 'LightGrey6', 'LightPurple', 'LightTeal', 'LightYellow', 'Material1', 'Material2', 'NeutralBlue', 'Purple', 'Reddit', 'Reds', 'SandyBeach', 'SystemDefault', 'SystemDefault1', 'SystemDefaultForReal', 'Tan', 'TanBlue', 'TealMono', 'Topanga']
 
     # Default values
-    DEFAULT_THEME = 'DarkAmber'
+    DEFAULT_THEME = 'LightGreen2'
     KEEP_ON_TOP = True
     OUTSIDE_TERM_TIME_MSG = '<OUTSIDE TERM TIME!>'
     STARTING_WINDOW_X = 585
@@ -138,13 +138,13 @@ class InvoiceApp:
             os.makedirs(self.RESOURCE_DIR)
         
         # Create templates file if it does not exist
-        if (not os.path.isfile(self.TEMPLATES_PATH)):
+        if not os.path.isfile(self.TEMPLATES_PATH):
             with open(self.TEMPLATES_PATH, 'w') as f:
                 f.write('{}')
                 f.close()
         
         # Create settings file if it does not exist
-        if (not os.path.isfile(self.SETTINGS_PATH)):
+        if not os.path.isfile(self.SETTINGS_PATH):
             with open(self.SETTINGS_PATH, 'w') as f:
                 f.write(f'[{self.PREFERENCES_SECTION}]\n')
                 f.write(f'{self.THEME} = ' + self.DEFAULT_THEME + '\n')
@@ -255,7 +255,7 @@ class InvoiceApp:
     def get_subject(self, name: str) -> str:
         with open(self.TEMPLATES_PATH, 'r') as f:
             json_data = json.load(f)
-         
+        
         day = str(json_data[name][self.DAY_INPUT])
         instrument = str(json_data[name][self.INSTRUMENT_INPUT])
         phrases, _ = self.which_term(self.current_date, day)
@@ -359,6 +359,7 @@ class InvoiceApp:
         # Event Loop
         while True:
             event, values = window.read()
+            
             if event == self.EXIT_BUTTON or event == sg.WIN_CLOSED:
                 break
             if event == 'Randomise':
@@ -378,7 +379,7 @@ class InvoiceApp:
         
         return saved
 
-    def selected_template_window(self, is_new_template: bool, name: str) -> str:
+    def selected_template_window(self, is_new_template: bool, name: str = '') -> str:
         with open(self.TEMPLATES_PATH, 'r') as f:
             json_data = json.load(f)
             f.close()
@@ -541,7 +542,7 @@ class InvoiceApp:
         while True:
             event, values = window.read()
             
-            if event == sg.WINDOW_CLOSE_ATTEMPTED_EVENT or event == self.EXIT_BUTTON:
+            if event == self.EXIT_BUTTON or event == sg.WINDOW_CLOSE_ATTEMPTED_EVENT:
                 self.config.set(self.STATE_SECTION, self.CURRENT_TEMPLATE, str(values[self.NAMES_COMBOBOX]))
                 
                 self.save_config()
@@ -575,7 +576,9 @@ class InvoiceApp:
                 self.selected_template_window(False, values[self.NAMES_COMBOBOX])
                 
             if event == self.NEW_TEMPLATE_BUTTON:
-                name = self.selected_template_window(True, '')
+                self.save_win_location(window)
+                
+                name = self.selected_template_window(True)
                 
                 if name != '':
                     window[self.NAMES_COMBOBOX].update(value=name, values=self.get_names_list())
