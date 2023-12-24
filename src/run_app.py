@@ -1,4 +1,4 @@
-from app import InvoiceApp
+from invoice_app import InvoiceApp
 from ctypes import windll
 
 if __name__ == '__main__':

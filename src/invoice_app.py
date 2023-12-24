@@ -1,5 +1,7 @@
 from math import floor
 import random
+import sys
+import time
 import PySimpleGUI as sg
 import json
 import re
@@ -25,6 +27,7 @@ class InvoiceApp:
     OUTSIDE_TERM_TIME_MSG = '<OUTSIDE TERM TIME!>'
     STARTING_WINDOW_X = 585
     STARTING_WINDOW_Y = 427
+    APP_VERSION = 'v0.3.0'
 
     # Term Dates
     today = datetime.now()
@@ -58,11 +61,12 @@ class InvoiceApp:
 
     # File Paths
     TEMPLATES_PATH = 'templates.json'
-    SETTINGS_PATH = 'settings.ini'
+    CONFIG_PATH = 'config.ini'
 
     # Config Sections
     PREFERENCES_SECTION = 'Preferences'
     STATE_SECTION = 'State'
+    META_DATA_SECTION = 'Meta-Data'
     
     # Config Values
     THEME = 'Theme'
@@ -70,6 +74,7 @@ class InvoiceApp:
     CURRENT_TEMPLATE = 'current-template'
     LAST_WINDOW_X = 'last-win-x'
     LAST_WINDOW_Y = 'last-win-y'
+    APP_VERSION_TITLE = 'app-version'
 
     # Resource Paths
     RESOURCE_DIR = 'res/'
@@ -117,12 +122,16 @@ class InvoiceApp:
     NAMES_COMBOBOX = 'Names'
     THEME_COMBOBOX = '<Theme>'
 
-    # Input Values
+    # Template Name
     RECIPIENT_INPUT = 'Recipient'
+    
+    # Template Info
     COST_INPUT = 'Cost'
     INSTRUMENT_INPUT = 'Instrument'
     DAY_INPUT = 'Day'
     STUDENT_INPUT = 'Students'
+    INFO_VALUES_LIST = [COST_INPUT, INSTRUMENT_INPUT, DAY_INPUT, STUDENT_INPUT]
+    
     INPUT_SIZE = 15
     THEME_INPUT_SIZE = 21
 
@@ -141,11 +150,11 @@ class InvoiceApp:
         if not os.path.isfile(self.TEMPLATES_PATH):
             with open(self.TEMPLATES_PATH, 'w') as f:
                 f.write('{}')
-                f.close()
-        
-        # Create settings file if it does not exist
-        if not os.path.isfile(self.SETTINGS_PATH):
-            with open(self.SETTINGS_PATH, 'w') as f:
+                f.close()          
+                
+        # Create config file if it does not exist
+        if not os.path.isfile(self.CONFIG_PATH):
+            with open(self.CONFIG_PATH, 'w') as f:
                 f.write(f'[{self.PREFERENCES_SECTION}]\n')
                 f.write(f'{self.THEME} = ' + self.DEFAULT_THEME + '\n')
                 f.write(f'{self.EMAIL_MODE} = {self.CLIPBOARD}\n')
@@ -154,20 +163,107 @@ class InvoiceApp:
                 f.write(f'{self.CURRENT_TEMPLATE} = \n')
                 f.write(f'{self.LAST_WINDOW_X} = {self.STARTING_WINDOW_X}\n')
                 f.write(f'{self.LAST_WINDOW_Y} = {self.STARTING_WINDOW_Y}\n')
+                
+                f.write(f'\n[{self.META_DATA_SECTION}]\n')
+                f.write(f'{self.APP_VERSION_TITLE} = {self.APP_VERSION}')
                 f.close()
-        
+            
         # Create config parser
         self.config = ConfigParser()
-        self.config.read(self.SETTINGS_PATH)
+        self.config.read(self.CONFIG_PATH)               
             
         sg.theme(self.get_theme())
         
         # Create gmail API object
         self.gmail_API = GmailAPI()
     
+    @staticmethod
+    def isFloat(value):
+        try:
+            float(value)
+            return True
+        except ValueError:
+            return False
+    
     def run(self):
-        self.main_window()
+        repaired = False
         
+        # Templates file data validation
+        with open(self.TEMPLATES_PATH, 'r') as fr:
+            json_data = dict(json.load(fr))
+            
+            name_list = list(json_data)
+            new_json_data = dict()
+            
+            needs_repairing = False
+            
+            # Check if templates file needs repairing
+            for name in name_list:
+                new_json_data[name] = {}
+        
+                name_data = dict(json_data[name])
+                
+                if sorted(list(name_data.keys())) != sorted(self.INFO_VALUES_LIST):
+                    needs_repairing = True
+            
+            if needs_repairing:
+                if self.display_pop_up_message("It seems that the information in your templates might be outdated or damaged. To fix this issue, would you like to try repairing the data?", True) == 'Yes':
+                    
+                    for name in name_list:
+                        new_json_data[name] = {}
+            
+                        name_data = dict(json_data[name])
+                        
+                        # Check if there's the correct number of keys for the first name in the template
+                        if sorted(list(name_data.keys())) != sorted(self.INFO_VALUES_LIST):    
+                        
+                            # Cost
+                            if name_data.get(self.COST_INPUT) == None:
+                                for info in name_data:
+                                    if InvoiceApp.isFloat(name_data[info]):
+                                        new_json_data[name][self.COST_INPUT] = json_data[name][info]  
+                            else:
+                                new_json_data[name][self.COST_INPUT] = json_data[name][self.COST_INPUT]
+                                        
+                            # Instrument
+                            if name_data.get(self.INSTRUMENT_INPUT) == None:
+                                for info in name_data:
+                                    if name_data[info] in self.instruments_list:
+                                        new_json_data[name][self.INSTRUMENT_INPUT] = json_data[name][info]
+                            else:
+                                new_json_data[name][self.INSTRUMENT_INPUT] = json_data[name][self.INSTRUMENT_INPUT]
+                                        
+                            # Day
+                            if name_data.get(self.DAY_INPUT) == None:
+                                for info in name_data:
+                                    if name_data[info] in self.weekdays:
+                                        new_json_data[name][self.DAY_INPUT] = json_data[name][info]
+                            else:
+                                new_json_data[name][self.DAY_INPUT] = json_data[name][self.DAY_INPUT]
+                                        
+                            # Students
+                            if name_data.get(self.STUDENT_INPUT) == None:
+                                # Know Student key alternatives
+                                new_json_data[name][self.STUDENT_INPUT] = json_data[name]['Student']
+                            else:
+                                new_json_data[name][self.STUDENT_INPUT] = json_data[name][self.STUDENT_INPUT]
+                        else:
+                            new_json_data[name] = json_data[name]
+                            
+                    with open(self.TEMPLATES_PATH, 'w') as fw:
+                            fw.write(json.dumps(new_json_data, sort_keys=True))   
+                            fw.close()
+                            
+                    repaired = True
+                        
+                else:
+                    self.display_pop_up_message("Cannot proceed with invalid template data\nApp is terminating!", False)
+                        
+                    time.sleep(3)
+                    sys.exit()
+
+        self.main_window(repaired)
+                        
     def get_theme(self) -> str:
         return self.config.get(self.PREFERENCES_SECTION, self.THEME)
         
@@ -300,7 +396,7 @@ class InvoiceApp:
             window[self.BODY_BUTTON].update(visible=clipboard_visible)
             
     def save_config(self):
-        with open(self.SETTINGS_PATH, 'w') as config_file:
+        with open(self.CONFIG_PATH, 'w') as config_file:
             self.config.write(config_file)
             config_file.close()       
             
@@ -475,7 +571,7 @@ class InvoiceApp:
                         json_data[name] = info
 
                         with open(self.TEMPLATES_PATH, 'w') as f:
-                            f.write(json.dumps(json_data))
+                            f.write(json.dumps(json_data, sort_keys=True))
                             f.close()
                         break        
         window.close()
@@ -535,8 +631,11 @@ class InvoiceApp:
         
         return window
 
-    def main_window(self) -> None:        
+    def main_window(self, repaired: bool = False) -> None:        
         window = self.get_main_window()  
+        
+        if repaired:
+            self.display_pop_up_message("Template data repaired successfully!", False)
         
         # Event Loop
         while True:
