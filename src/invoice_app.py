@@ -714,6 +714,10 @@ class InvoiceApp:
                 
                 # Reload window if settings were saved
                 if self.settings_window():
+                    self.config.set(self.STATE_SECTION, self.CURRENT_TEMPLATE, str(values[self.NAMES_COMBOBOX]))
+                
+                    self.save_config()
+                    
                     sg.theme(self.get_theme())
                     window.close()
                     window = self.get_main_window()
