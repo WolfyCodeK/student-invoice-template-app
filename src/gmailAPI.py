@@ -23,7 +23,7 @@ class GmailAPI():
 
     PARENT_FOLDER = "lib/"
         
-    def __init__(self) -> None:
+    def __init__(self):
         # Create resources directory if it does not exist
         if not os.path.exists(self.PARENT_FOLDER):
             os.makedirs(self.PARENT_FOLDER)

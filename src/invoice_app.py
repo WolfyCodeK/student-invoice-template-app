@@ -1,7 +1,7 @@
-from math import floor
 import random
 import sys
 import time
+from typing import Literal
 import PySimpleGUI as sg
 import json
 import re
@@ -135,9 +135,9 @@ class InvoiceApp:
     INPUT_SIZE = 15
     THEME_INPUT_SIZE = 21
 
-    SINGLE_DRAFT_THREAD_END_KEY = ('-SINGLE DRAFT THREAD-', '-SINGLE DRAFT THREAD ENDED-')
+    SINGLE_DRAFT_THREAD_END_KEY = '-SINGLE DRAFT THREAD-'
     
-    ALL_DRAFT_THREAD_END_KEY = ('-ALL DRAFT THREAD-', '-ALL DRAFT THREAD ENDED-')
+    ALL_DRAFT_THREAD_END_KEY = '-ALL DRAFT THREAD-'
 
     instruments_list = ['piano', 'drum', 'guitar', 'vocal', 'music', 'singing', 'bass guitar', 'classical guitar']
 
@@ -207,7 +207,7 @@ class InvoiceApp:
                     needs_repairing = True
             
             if needs_repairing:
-                if self.display_pop_up_message("It seems that the information in your templates might be outdated or damaged. To fix this issue, would you like to try repairing the data?", True) == 'Yes':
+                if self.display_message_box("It seems that the information in your templates might be outdated or damaged. To fix this issue, would you like to try repairing the data?", 'yn') == 'Yes':
                     
                     for name in name_list:
                         new_json_data[name] = {}
@@ -257,23 +257,23 @@ class InvoiceApp:
                     repaired = True
                         
                 else:
-                    self.display_pop_up_message("Cannot proceed with invalid template data\nApp is terminating!", False)
+                    self.display_message_box("Cannot proceed with invalid template data\nApp is terminating!", 'er')
                         
                     time.sleep(3)
                     sys.exit()
 
         self.main_window(repaired)
                         
-    def get_theme(self) -> str:
+    def get_theme(self):
         return self.config.get(self.PREFERENCES_SECTION, self.THEME)
         
-    def get_email_mode(self) -> str:
+    def get_email_mode(self):
         return self.config.get(self.PREFERENCES_SECTION, self.EMAIL_MODE)
     
-    def get_current_template(self) -> str:
+    def get_current_template(self):
         return self.config.get(self.STATE_SECTION, self.CURRENT_TEMPLATE)  
         
-    def get_phrases(self, start_date: datetime, end_date: datetime, half: str, term: str) -> list:
+    def get_phrases(self, start_date: datetime, end_date: datetime, half: str, term: str):
             
         body_phrase = str(self.num_to_weekday(start_date.isoweekday())) + ' ' + str(start_date.day) + self.get_day_suffix(start_date.day) + str(self.num_to_month(start_date.month)) + ' to and including ' + str(self.num_to_weekday(end_date.isoweekday())) + ' ' + str(end_date.day) + self.get_day_suffix(end_date.day) + str(self.num_to_month(end_date.month))
         
@@ -284,7 +284,7 @@ class InvoiceApp:
         
         return current_term
 
-    def get_day_suffix(self, day: int) -> str:
+    def get_day_suffix(self, day: int):
         match(day):
             case 1:
                 return 'st '
@@ -295,13 +295,13 @@ class InvoiceApp:
             case _:
                 return 'th '
 
-    def get_term_length_in_weeks(self, start_date, end_date) -> timedelta:
+    def get_term_length_in_weeks(self, start_date, end_date):
         first_monday = (start_date - timedelta(days=start_date.weekday()))
         last_monday = (end_date - timedelta(days=end_date.weekday()))   
         
         return timedelta(weeks=(((last_monday - first_monday).days / 7) + 1))
 
-    def which_term(self, date: datetime, day: str) -> tuple:
+    def which_term(self, date: datetime, day: str):
         current_term = [self.OUTSIDE_TERM_TIME_MSG, self.OUTSIDE_TERM_TIME_MSG, self.OUTSIDE_TERM_TIME_MSG] 
 
         for term in self.term_list:
@@ -314,16 +314,18 @@ class InvoiceApp:
                 
                 return current_term, int(date_gap.days / 7)
             
-    def check_select_fields_are_not_empty(self, values: dict) -> bool:
+        return None 
+            
+    def check_select_fields_are_not_empty(self, values: dict):
         return len(str(values[self.RECIPIENT_INPUT])) == 0 or len(str(values[self.COST_INPUT])) == 0 or len(str(values[self.INSTRUMENT_INPUT])) == 0 or len(str(values[self.STUDENT_INPUT])) == 0
 
-    def num_to_weekday(self, num: int) -> str:
+    def num_to_weekday(self, num: int):
         return self.weekdays[num-1]
 
-    def num_to_month(self, num: int) -> str:
+    def num_to_month(self, num: int):
         return self.months[num-1]
 
-    def next_day_in_week(self, date: datetime, target_day: str) -> datetime:    
+    def next_day_in_week(self, date: datetime, target_day: str):    
         day_found = False
         search_day = date
         
@@ -339,7 +341,7 @@ class InvoiceApp:
         for button in button_list:
             window[button].update(disabled=disabled)
 
-    def get_names_list(self) -> list[str]:
+    def get_names_list(self):
         with open(self.TEMPLATES_PATH, 'r') as f:
             json_data = json.load(f)
             names_list = list(json_data.keys())
@@ -348,17 +350,21 @@ class InvoiceApp:
             
         return names_list
 
-    def get_subject(self, name: str) -> str:
+    def get_subject(self, name: str):
         with open(self.TEMPLATES_PATH, 'r') as f:
             json_data = json.load(f)
         
         day = str(json_data[name][self.DAY_INPUT])
         instrument = str(json_data[name][self.INSTRUMENT_INPUT])
-        phrases, _ = self.which_term(self.current_date, day)
+        term_data = self.which_term(self.current_date, day)
         
-        return f"Invoice for {instrument.title()} Lessons {phrases[PhraseType.SUBJECT]}"
-    
-    def get_body(self, name: str) -> str:
+        if term_data is not None:
+            phrases, _ = term_data
+            return f"Invoice for {instrument.title()} Lessons {phrases[PhraseType.SUBJECT]}"
+        
+        return f"Invoice for <?> Lessons <?>"
+        
+    def get_body(self, name: str):
         with open(self.TEMPLATES_PATH, 'r') as f:
             json_data = json.load(f)
             f.close()
@@ -368,28 +374,54 @@ class InvoiceApp:
         day = json_data[name][self.DAY_INPUT]
         students = json_data[name][self.STUDENT_INPUT]
         
-        phrases, num_of_lessons = self.which_term(self.current_date, day)
+        term_data = self.which_term(self.current_date, day)
         
-        total_cost = '%.2f' % (round(float(int(num_of_lessons) * float(cost_of_lessons)), 2))
+        if term_data is not None:
+            phrases, num_of_lessons = term_data
+            
+            total_cost = '%.2f' % (round(float(int(num_of_lessons) * float(cost_of_lessons)), 2))
     
-        num_of_lessons_phrase = f"There are {num_of_lessons} sessions"
+            num_of_lessons_phrase = f"There are {num_of_lessons} sessions"
+            
+            if int(num_of_lessons) == 1:
+                num_of_lessons_phrase = f"There is {num_of_lessons} session"
         
-        if int(num_of_lessons) == 1:
-            num_of_lessons_phrase = f"There is {num_of_lessons} session"
-    
-        return f"Hi {name},\n\nHere is my invoice for {students}'s {instrument} lessons {phrases[PhraseType.INVOICE]}.\n--------\n{num_of_lessons_phrase} this {phrases[PhraseType.INVOICE]} from {phrases[PhraseType.DATES]}.\n\n{num_of_lessons} x £{cost_of_lessons} = £{total_cost}\n\nThank you\n--------\n\nKind regards\nRobert"
+            return f"Hi {name},\n\nHere is my invoice for {students}'s {instrument} lessons {phrases[PhraseType.INVOICE]}.\n--------\n{num_of_lessons_phrase} this {phrases[PhraseType.INVOICE]} from {phrases[PhraseType.DATES]}.\n\n{num_of_lessons} x £{cost_of_lessons} = £{total_cost}\n\nThank you\n--------\n\nKind regards\nRobert"
+        
+        eMsg = '<?>'
+        
+        return f">>>>> WARNING: OUTSIDE TERM TIME\n>>>>> INFORMATION CANNOT BE APPLIED\n\nHi {name},\n\nHere is my invoice for {eMsg}'s {eMsg} lessons {eMsg}.\n--------\n{eMsg} this {eMsg} from {eMsg}.\n\n{eMsg} x £{eMsg} = £{eMsg}\n\nThank you\n--------\n\nKind regards\nRobert"
 
-    def display_pop_up_message(self, title: str, question: bool) -> None|str:
-        if question:
+    def display_message_box(self, title: str, box_type: Literal['yn', 'qm', 'pu', 'er']):
+        """Display a message to the user inside a box.
+
+        Args:
+            title (str): The text displayed inside the pop up message.
+            box_type (Literal['yn', 'qm', 'pu', 'er']): [ys -> Yes or No], [qm -> Quick Message], [pu -> Pop Up], [er -> Error Message]
+
+        Returns:
+            (str | None): The string of the button clicked or None if no button was clicked.
+        """
+        if box_type == 'yn':
             choice = sg.popup_yes_no(title, title='', font=self.text_font, icon=self.BLANK_ICO, keep_on_top=self.KEEP_ON_TOP, location=(self.get_last_win_x() + self.WIN_OFFSET_X, self.get_last_win_y() + self.WIN_OFFSET_Y))
     
             return choice
-        else:
+        
+        elif box_type == 'qm':
             sg.popup_quick_message(title, font=self.text_font, title='', icon=self.BLANK_ICO, keep_on_top=self.KEEP_ON_TOP, background_color="Black", text_color="White", location=(self.get_last_win_x() + self.WIN_OFFSET_X, self.get_last_win_y() + self.WIN_OFFSET_Y)) 
             
             return None
         
-    def toggle_clipboard_visible(self, window: sg.Window, clipboard_visible: bool) -> None:
+        elif box_type == 'pu':
+            choice = sg.popup(title, title='', font=self.text_font, icon=self.BLANK_ICO, keep_on_top=self.KEEP_ON_TOP, location=(self.get_last_win_x() + self.WIN_OFFSET_X, self.get_last_win_y() + self.WIN_OFFSET_Y))
+            
+            return choice
+        elif box_type == 'er':
+            sg.popup_quick_message(title, font=self.text_font, title='', icon=self.BLANK_ICO, keep_on_top=self.KEEP_ON_TOP, background_color="Red", text_color="White", location=(self.get_last_win_x() + self.WIN_OFFSET_X, self.get_last_win_y() + self.WIN_OFFSET_Y)) 
+            
+            return None
+        
+    def toggle_clipboard_visible(self, window: sg.Window, clipboard_visible: bool):
             window[self.DRAFT_BUTTON].update(visible=not clipboard_visible)
             window[self.DRAFT_ALL_BUTTON].update(visible=not clipboard_visible)
             window[self.SUBJECT_BUTTON].update(visible=clipboard_visible)
@@ -401,14 +433,12 @@ class InvoiceApp:
             config_file.close()       
             
     def create_draft_for_template(self, name: str):
-        self.display_pop_up_message('Sending...', False)
-        
         self.gmail_API.gmail_create_draft(self.get_subject(name), self.get_body(name))
         
-    def get_last_win_x(self) -> int:
+    def get_last_win_x(self):
         return int(self.config.get(self.STATE_SECTION, self.LAST_WINDOW_X))
     
-    def get_last_win_y(self) -> int:
+    def get_last_win_y(self):
         return int(self.config.get(self.STATE_SECTION, self.LAST_WINDOW_Y))
     
     def save_win_location(self, window: sg.Window):
@@ -419,7 +449,7 @@ class InvoiceApp:
         
         self.save_config()
     
-    def settings_window(self) -> bool:    
+    def settings_window(self):    
         """Create the settings window.
 
         Returns:
@@ -475,7 +505,7 @@ class InvoiceApp:
         
         return saved
 
-    def selected_template_window(self, is_new_template: bool, name: str = '') -> str:
+    def selected_template_window(self, is_new_template: bool, name: str = ''):
         with open(self.TEMPLATES_PATH, 'r') as f:
             json_data = json.load(f)
             f.close()
@@ -547,17 +577,21 @@ class InvoiceApp:
             if event == self.SAVE_BUTTON: 
                 # Input error checking
                 if re.search('\d', values[self.RECIPIENT_INPUT]):
-                    sg.popup('Recipient name cannot contain numbers!', title='', font=self.text_font, icon=self.BLANK_ICO, keep_on_top=self.KEEP_ON_TOP)
+                    self.display_message_box('Recipient name cannot contain numbers!', 'pu')
+                    
                 elif re.search('\D', str(values[self.COST_INPUT]).replace('.', '')):
-                    sg.popup('Cost of lesson cannot contain characters!', title='', font=self.text_font, icon=self.BLANK_ICO,
-                    keep_on_top=self.KEEP_ON_TOP)
+                    self.display_message_box('Cost of lesson cannot contain characters!', 'pu')
+                    
                 elif re.search('\d', values[self.STUDENT_INPUT]):
-                    sg.popup('Students names cannot contain numbers!', title='', font=self.text_font, icon=self.BLANK_ICO,keep_on_top=self.KEEP_ON_TOP)
+                    self.display_message_box('Students names cannot contain numbers!', 'pu')
+                    
                 elif self.check_select_fields_are_not_empty(values):
-                    sg.popup('All fields must be completed!', title='', font=self.text_font, icon=self.BLANK_ICO, keep_on_top=self.KEEP_ON_TOP)
+                    self.display_message_box('All fields must be completed!', 'pu')
+                    
                 else:
                     if (name in json_data) and is_new_template:
-                        sg.popup('Template with that name already exists!', title='', font=self.text_font, icon=self.BLANK_ICO,keep_on_top=self.KEEP_ON_TOP)
+                        self.display_message_box('Template with that name already exists!', 'pu')
+                        
                     else:
                         name = values[self.RECIPIENT_INPUT]
                         
@@ -578,7 +612,7 @@ class InvoiceApp:
         
         return name
 
-    def get_main_window(self) -> sg.Window:
+    def get_main_window(self):
         if (self.get_email_mode() == self.CLIPBOARD):
             sub_body_enabled = True
             draft_enabled = False
@@ -631,11 +665,11 @@ class InvoiceApp:
         
         return window
 
-    def main_window(self, repaired: bool = False) -> None:        
+    def main_window(self, repaired: bool = False):        
         window = self.get_main_window()  
         
         if repaired:
-            self.display_pop_up_message("Template data repaired successfully!", False)
+            self.display_message_box("Template data repaired successfully!", 'qm')
         
         # Event Loop
         while True:
@@ -652,7 +686,7 @@ class InvoiceApp:
                 self.toggle_buttons_disabled(window, self.template_edit_buttons_list, False)        
                     
             if event == self.DELETE_BUTTON:                
-                if self.display_pop_up_message('Are you sure you want to delete this template?', True) == 'Yes':
+                if self.display_message_box('Are you sure you want to delete this template?', 'yn') == 'Yes':
                     with open(self.TEMPLATES_PATH, 'r') as f:
                         json_data = json.load(f)
                         f.close()
@@ -667,7 +701,7 @@ class InvoiceApp:
                         
                     self.toggle_buttons_disabled(window, self.template_edit_buttons_list, True)
                     
-                    self.display_pop_up_message('Template Deleted!', False)
+                    self.display_message_box('Template Deleted!', 'qm')
                 
             if event == self.EDIT_BUTTON:
                 self.save_win_location(window)
@@ -685,29 +719,33 @@ class InvoiceApp:
                     self.toggle_buttons_disabled(window, self.template_edit_buttons_list, False)
             
             if event == self.DRAFT_BUTTON:
+                self.display_message_box('Sending...', 'qm')
+                
                 window.start_thread(lambda: self.create_draft_for_template(values[self.NAMES_COMBOBOX]), self.SINGLE_DRAFT_THREAD_END_KEY)
                 
             if event == self.DRAFT_ALL_BUTTON:                
-                if self.display_pop_up_message('Are you sure you want to draft all templates?', True) == 'Yes':
+                if self.display_message_box('Are you sure you want to draft all templates?', 'yn') == 'Yes':
+
+                    self.display_message_box('Sending...', 'qm')
 
                     for name in self.get_names_list():
                         window.start_thread(lambda: self.create_draft_for_template(name), self.ALL_DRAFT_THREAD_END_KEY)
                 
-            if event[0] == self.SINGLE_DRAFT_THREAD_END_KEY[0]:
-                self.display_pop_up_message('Draft Sent!', False)
+            if event == self.SINGLE_DRAFT_THREAD_END_KEY:
+                self.display_message_box('Draft Sent!', 'qm')
                 
-            if event[0] == self.ALL_DRAFT_THREAD_END_KEY[0]:
-                self.display_pop_up_message('All Drafts Sent!', False)
+            if event == self.ALL_DRAFT_THREAD_END_KEY:
+                self.display_message_box('All Drafts Sent!', 'qm')
                 
             if event == self.SUBJECT_BUTTON:
                 pyperclip.copy(self.get_subject(values[self.NAMES_COMBOBOX]))
                 
-                self.display_pop_up_message('Copied Subject!', False)
+                self.display_message_box('Copied Subject!', 'qm')
                 
             if event == self.BODY_BUTTON:
                 pyperclip.copy(self.get_body(values[self.NAMES_COMBOBOX]))
                 
-                self.display_pop_up_message('Copied Body!', False) 
+                self.display_message_box('Copied Body!', 'qm') 
 
             if event == self.SETTINGS_BUTTON:
                 self.save_win_location(window)
@@ -722,6 +760,6 @@ class InvoiceApp:
                     window.close()
                     window = self.get_main_window()
                     
-                    self.display_pop_up_message('Settings Saved!', False)
+                    self.display_message_box('Settings Saved!', 'qm')
                 
         window.close()
