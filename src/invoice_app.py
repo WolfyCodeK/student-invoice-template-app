@@ -392,7 +392,7 @@ class InvoiceApp:
         
         return f">>>>> WARNING: OUTSIDE TERM TIME\n>>>>> INFORMATION CANNOT BE APPLIED\n\nHi {name},\n\nHere is my invoice for {eMsg}'s {eMsg} lessons {eMsg}.\n--------\n{eMsg} this {eMsg} from {eMsg}.\n\n{eMsg} x £{eMsg} = £{eMsg}\n\nThank you\n--------\n\nKind regards\nRobert"
 
-    def display_message_box(self, title: str, box_type: Literal['yn', 'qm', 'pu', 'er']):
+    def display_message_box(self, title: str, box_type: Literal['yn', 'qm', 'pu', 'er'], window: sg.Window = None):
         """Display a message to the user inside a box.
 
         Args:
@@ -402,6 +402,10 @@ class InvoiceApp:
         Returns:
             (str | None): The string of the button clicked or None if no button was clicked.
         """
+        # If possible save window location before displaying message box
+        if window is not None:
+            self.save_win_location(window)
+        
         if box_type == 'yn':
             choice = sg.popup_yes_no(title, title='', font=self.text_font, icon=self.BLANK_ICO, keep_on_top=self.KEEP_ON_TOP, location=(self.get_last_win_x() + self.WIN_OFFSET_X, self.get_last_win_y() + self.WIN_OFFSET_Y))
     
@@ -577,20 +581,20 @@ class InvoiceApp:
             if event == self.SAVE_BUTTON: 
                 # Input error checking
                 if re.search('\d', values[self.RECIPIENT_INPUT]):
-                    self.display_message_box('Recipient name cannot contain numbers!', 'pu')
+                    self.display_message_box('Recipient name cannot contain numbers!', 'pu', window)
                     
                 elif re.search('\D', str(values[self.COST_INPUT]).replace('.', '')):
-                    self.display_message_box('Cost of lesson cannot contain characters!', 'pu')
+                    self.display_message_box('Cost of lesson cannot contain characters!', 'pu', window)
                     
                 elif re.search('\d', values[self.STUDENT_INPUT]):
-                    self.display_message_box('Students names cannot contain numbers!', 'pu')
+                    self.display_message_box('Students names cannot contain numbers!', 'pu', window)
                     
                 elif self.check_select_fields_are_not_empty(values):
-                    self.display_message_box('All fields must be completed!', 'pu')
+                    self.display_message_box('All fields must be completed!', 'pu', window)
                     
                 else:
                     if (name in json_data) and is_new_template:
-                        self.display_message_box('Template with that name already exists!', 'pu')
+                        self.display_message_box('Template with that name already exists!', 'pu', window)
                         
                     else:
                         name = values[self.RECIPIENT_INPUT]
@@ -669,7 +673,7 @@ class InvoiceApp:
         window = self.get_main_window()  
         
         if repaired:
-            self.display_message_box("Template data repaired successfully!", 'qm')
+            self.display_message_box("Template data repaired successfully!", 'qm', window)
         
         # Event Loop
         while True:
@@ -686,7 +690,7 @@ class InvoiceApp:
                 self.toggle_buttons_disabled(window, self.template_edit_buttons_list, False)        
                     
             if event == self.DELETE_BUTTON:                
-                if self.display_message_box('Are you sure you want to delete this template?', 'yn') == 'Yes':
+                if self.display_message_box('Are you sure you want to delete this template?', 'yn', window) == 'Yes':
                     with open(self.TEMPLATES_PATH, 'r') as f:
                         json_data = json.load(f)
                         f.close()
@@ -701,7 +705,7 @@ class InvoiceApp:
                         
                     self.toggle_buttons_disabled(window, self.template_edit_buttons_list, True)
                     
-                    self.display_message_box('Template Deleted!', 'qm')
+                    self.display_message_box('Template Deleted!', 'qm', window)
                 
             if event == self.EDIT_BUTTON:
                 self.save_win_location(window)
@@ -719,33 +723,33 @@ class InvoiceApp:
                     self.toggle_buttons_disabled(window, self.template_edit_buttons_list, False)
             
             if event == self.DRAFT_BUTTON:
-                self.display_message_box('Sending...', 'qm')
+                self.display_message_box('Sending...', 'qm', window)
                 
                 window.start_thread(lambda: self.create_draft_for_template(values[self.NAMES_COMBOBOX]), self.SINGLE_DRAFT_THREAD_END_KEY)
                 
             if event == self.DRAFT_ALL_BUTTON:                
-                if self.display_message_box('Are you sure you want to draft all templates?', 'yn') == 'Yes':
+                if self.display_message_box('Are you sure you want to draft all templates?', 'yn', window) == 'Yes':
 
-                    self.display_message_box('Sending...', 'qm')
+                    self.display_message_box('Sending...', 'qm', window)
 
                     for name in self.get_names_list():
                         window.start_thread(lambda: self.create_draft_for_template(name), self.ALL_DRAFT_THREAD_END_KEY)
                 
             if event == self.SINGLE_DRAFT_THREAD_END_KEY:
-                self.display_message_box('Draft Sent!', 'qm')
+                self.display_message_box('Draft Sent!', 'qm', window)
                 
             if event == self.ALL_DRAFT_THREAD_END_KEY:
-                self.display_message_box('All Drafts Sent!', 'qm')
+                self.display_message_box('All Drafts Sent!', 'qm', window)
                 
             if event == self.SUBJECT_BUTTON:
                 pyperclip.copy(self.get_subject(values[self.NAMES_COMBOBOX]))
                 
-                self.display_message_box('Copied Subject!', 'qm')
+                self.display_message_box('Copied Subject!', 'qm', window)
                 
             if event == self.BODY_BUTTON:
                 pyperclip.copy(self.get_body(values[self.NAMES_COMBOBOX]))
                 
-                self.display_message_box('Copied Body!', 'qm') 
+                self.display_message_box('Copied Body!', 'qm', window) 
 
             if event == self.SETTINGS_BUTTON:
                 self.save_win_location(window)
@@ -760,6 +764,6 @@ class InvoiceApp:
                     window.close()
                     window = self.get_main_window()
                     
-                    self.display_message_box('Settings Saved!', 'qm')
+                    self.display_message_box('Settings Saved!', 'qm', window)
                 
         window.close()

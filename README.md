@@ -2,4 +2,4 @@
 App that automates emailing students for private tutition. 
 
 # Exectuable Version Download
-[StudentInvoice-0.2.1.zip](https://github.com/WolfyCodeK/student-invoice-template-app/raw/main/StudentInvoice-0.2.1.zip)
+[StudentInvoice-0.3.0.zip](https://github.com/WolfyCodeK/student-invoice-template-app/raw/main/StudentInvoice-0.3.0.zip)
