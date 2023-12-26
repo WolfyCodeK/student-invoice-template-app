@@ -31,7 +31,7 @@ class InvoiceApp:
     STARTING_WINDOW_X = 585
     STARTING_WINDOW_Y = 427
     APP_VERSION = 'v0.3.0'
-    APP_URL = f'https://github.com/WolfyCodeK/student-invoice-template-app/raw/main/StudentInvoice-{APP_VERSION.removeprefix("v")}.zip'
+    APP_URL = f'https://github.com/WolfyCodeK/student-invoice-template-app/raw/main/StudentInvoiceExecutable.zip'
 
     # Term Dates
     today = datetime.now()
@@ -774,12 +774,13 @@ class InvoiceApp:
                     self.display_message_box('Settings Saved!', 'qm', window)
                     
             if event == self.UPDATE_BUTTON:
-                # Get the absolute path of the current file
+                # Get the absolute path of this file
                 current_file_path = os.path.abspath(__file__)
 
-                # Navigate one directory back (get the parent directory path)
+                # Navigate one directory back to get the parent directory
                 parent_directory_path = os.path.dirname(os.path.dirname(current_file_path))
                 
+                # Attempt to get response from download url
                 try:
                     response = requests.get(self.APP_URL)
                     
