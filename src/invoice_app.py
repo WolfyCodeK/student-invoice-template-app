@@ -1,9 +1,11 @@
+import io
 import sys
 import time
 from datetime import datetime, timedelta
 from enum import IntEnum
 import os.path
 from typing import Literal
+import zipfile
 
 import PySimpleGUI as sg
 import json
@@ -30,7 +32,7 @@ class InvoiceApp:
     OUTSIDE_TERM_TIME_MSG = '<OUTSIDE TERM TIME!>'
     STARTING_WINDOW_X = 585
     STARTING_WINDOW_Y = 427
-    APP_VERSION = 'v0.3.0'
+    APP_VERSION = '0.2.0'
     APP_URL = f'https://github.com/WolfyCodeK/student-invoice-template-app/raw/main/StudentInvoiceExecutable.zip'
 
     # Term Dates
@@ -79,6 +81,7 @@ class InvoiceApp:
     LAST_WINDOW_X = 'last-win-x'
     LAST_WINDOW_Y = 'last-win-y'
     APP_VERSION_TITLE = 'app-version'
+    APP_LATEST_AVAILABLE_VERSION_TITLE = 'latest_available_version'
 
     # Resource Paths
     RESOURCE_DIR = 'res/'
@@ -147,6 +150,12 @@ class InvoiceApp:
     instruments_list = ['piano', 'drum', 'guitar', 'vocal', 'music', 'singing', 'bass guitar', 'classical guitar']
 
     def __init__(self):
+        # Get the absolute path of this file
+        self.current_file_path = os.path.abspath(__file__)
+
+        # Navigate one directory back to get the parent directory
+        self.parent_directory_path = os.path.dirname(os.path.dirname(self.current_file_path))
+        
         # Create resources directory if it does not exist
         if not os.path.exists(self.RESOURCE_DIR):
             os.makedirs(self.RESOURCE_DIR)
@@ -156,7 +165,7 @@ class InvoiceApp:
             with open(self.TEMPLATES_PATH, 'w') as f:
                 f.write('{}')
                 f.close()          
-                
+    
         # Create config file if it does not exist
         if not os.path.isfile(self.CONFIG_PATH):
             with open(self.CONFIG_PATH, 'w') as f:
@@ -170,18 +179,24 @@ class InvoiceApp:
                 f.write(f'{self.LAST_WINDOW_Y} = {self.STARTING_WINDOW_Y}\n')
                 
                 f.write(f'\n[{self.META_DATA_SECTION}]\n')
-                f.write(f'{self.APP_VERSION_TITLE} = {self.APP_VERSION}')
+                f.write(f'{self.APP_VERSION_TITLE} = \n')
+                f.write(f'{self.APP_LATEST_AVAILABLE_VERSION_TITLE} = \n')
                 f.close()
             
         # Create config parser
         self.config = ConfigParser()
-        self.config.read(self.CONFIG_PATH)               
+        self.config.read(self.CONFIG_PATH)       
+        
+        # Fetch latest version and set number in config
+        self.config.set(self.META_DATA_SECTION, self.APP_LATEST_AVAILABLE_VERSION_TITLE, self.fetch_latest_available_version_number())     
+
+        self.config.set(self.META_DATA_SECTION, self.APP_VERSION_TITLE, self.APP_VERSION)        
             
         sg.theme(self.get_theme())
         
         # Create gmail API object
         self.gmail_API = GmailAPI()
-    
+        
     @staticmethod
     def isFloat(value):
         try:
@@ -269,6 +284,26 @@ class InvoiceApp:
 
         self.main_window(repaired)
                         
+    def fetch_latest_available_version_number(self):
+        latest_available_version = self.APP_VERSION
+        
+        try:
+            response = requests.get('https://raw.githubusercontent.com/WolfyCodeK/student-invoice-template-app/main/README.md')
+            
+            pattern = r'\[StudentInvoice-(\d+\.\d+\.\d+)\.zip\]'
+            match = re.search(pattern, response.content.decode())
+            
+            if match is not None:
+                latest_available_version = match.group(1)
+                
+        except Exception as _:
+            self.display_message_box('There was a problem fetching the latest update. Try checking your internet connection.', 'er')
+            
+        return latest_available_version
+    
+    def is_app_latest_version(self):
+        return self.APP_VERSION == self.get_latest_available_version()
+
     def get_theme(self):
         return self.config.get(self.PREFERENCES_SECTION, self.THEME)
         
@@ -277,6 +312,9 @@ class InvoiceApp:
     
     def get_current_template(self):
         return self.config.get(self.STATE_SECTION, self.CURRENT_TEMPLATE)  
+    
+    def get_latest_available_version(self):
+        return self.config.get(self.META_DATA_SECTION, self.APP_LATEST_AVAILABLE_VERSION_TITLE)
         
     def get_phrases(self, start_date: datetime, end_date: datetime, half: str, term: str):
             
@@ -636,6 +674,13 @@ class InvoiceApp:
             support_buttons_disabled = True
         else:
             support_buttons_disabled = False
+            
+        if not self.is_app_latest_version():
+            update_tooltip = f'Update {self.get_latest_available_version()} is available!'
+            tooltip_disabled = False
+        else:
+            update_tooltip = None
+            tooltip_disabled = True
         
         support_buttons = [
                             [
@@ -648,6 +693,10 @@ class InvoiceApp:
                         ]
 
         layout = [  
+                    [
+                        sg.Push(),
+                        sg.Button(self.UPDATE_BUTTON, font=self.text_font, disabled=tooltip_disabled, tooltip=update_tooltip)
+                    ],
                     [
                         [
                             sg.Text('<Templates>', font=self.text_font),
@@ -774,27 +823,17 @@ class InvoiceApp:
                     self.display_message_box('Settings Saved!', 'qm', window)
                     
             if event == self.UPDATE_BUTTON:
-                # Get the absolute path of this file
-                current_file_path = os.path.abspath(__file__)
-
-                # Navigate one directory back to get the parent directory
-                parent_directory_path = os.path.dirname(os.path.dirname(current_file_path))
-                
                 # Attempt to get response from download url
-                try:
-                    response = requests.get(self.APP_URL)
+                response = requests.get('https://github.com/WolfyCodeK/student-invoice-template-app/raw/main/StudentInvoiceExecutable.zip', stream=True)
+                if response.status_code == 200:
+                    download_content = io.BytesIO(response.content)
+                else:
+                    print(f'Failed to download the file. Status code: {response.status_code}')
+                    return None
                     
-                    with open(parent_directory_path, 'wb') as file:
-                        file.write(response.content)
-
-                except Exception as e:
-                    sg.popup_error(f'Error updating file: {e}')
-                
-                # Create the extraction directory if it doesn't exist
-                os.makedirs(extract_to_directory, exist_ok=True)
-
-                # Extract the contents of the zip file
-                with zipfile.ZipFile(zip_file_path, 'r') as zip_ref:
-                    zip_ref.extractall(extract_to_directory)
+                with zipfile.ZipFile(download_content, 'r') as zip_ref:
+                # Extract all contents to the specified path
+                    zip_ref.extractall(self.parent_directory_path)
+                    print(f"Zip file contents extracted to: {self.parent_directory_path}")
                 
         window.close()
