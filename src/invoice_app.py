@@ -32,7 +32,7 @@ class InvoiceApp:
     OUTSIDE_TERM_TIME_MSG = '<OUTSIDE TERM TIME!>'
     STARTING_WINDOW_X = 585
     STARTING_WINDOW_Y = 427
-    APP_VERSION = '0.2.0'
+    DOWNLOADED_APP_VERSION = '0.2.0'
     APP_URL = f'https://github.com/WolfyCodeK/student-invoice-template-app/raw/main/StudentInvoiceExecutable.zip'
 
     # Term Dates
@@ -81,7 +81,7 @@ class InvoiceApp:
     LAST_WINDOW_X = 'last-win-x'
     LAST_WINDOW_Y = 'last-win-y'
     APP_VERSION_TITLE = 'app-version'
-    APP_LATEST_AVAILABLE_VERSION_TITLE = 'latest_available_version'
+    APP_LATEST_AVAILABLE_VERSION_TITLE = 'latest-available-version'
 
     # Resource Paths
     RESOURCE_DIR = 'res/'
@@ -179,7 +179,7 @@ class InvoiceApp:
                 f.write(f'{self.LAST_WINDOW_Y} = {self.STARTING_WINDOW_Y}\n')
                 
                 f.write(f'\n[{self.META_DATA_SECTION}]\n')
-                f.write(f'{self.APP_VERSION_TITLE} = \n')
+                f.write(f'{self.APP_VERSION_TITLE} = {self.DOWNLOADED_APP_VERSION}\n')
                 f.write(f'{self.APP_LATEST_AVAILABLE_VERSION_TITLE} = \n')
                 f.close()
             
@@ -190,7 +190,9 @@ class InvoiceApp:
         # Fetch latest version and set number in config
         self.config.set(self.META_DATA_SECTION, self.APP_LATEST_AVAILABLE_VERSION_TITLE, self.fetch_latest_available_version_number())     
 
-        self.config.set(self.META_DATA_SECTION, self.APP_VERSION_TITLE, self.APP_VERSION)        
+        self.config.set(self.META_DATA_SECTION, self.APP_VERSION_TITLE, self.get_current_app_version())     
+        
+        self.save_config()   
             
         sg.theme(self.get_theme())
         
@@ -285,7 +287,7 @@ class InvoiceApp:
         self.main_window(repaired)
                         
     def fetch_latest_available_version_number(self):
-        latest_available_version = self.APP_VERSION
+        latest_available_version = self.get_current_app_version()
         
         try:
             response = requests.get('https://raw.githubusercontent.com/WolfyCodeK/student-invoice-template-app/main/README.md')
@@ -302,7 +304,7 @@ class InvoiceApp:
         return latest_available_version
     
     def is_app_latest_version(self):
-        return self.APP_VERSION == self.get_latest_available_version()
+        return self.get_current_app_version() == self.get_latest_available_app_version()
 
     def get_theme(self):
         return self.config.get(self.PREFERENCES_SECTION, self.THEME)
@@ -313,7 +315,10 @@ class InvoiceApp:
     def get_current_template(self):
         return self.config.get(self.STATE_SECTION, self.CURRENT_TEMPLATE)  
     
-    def get_latest_available_version(self):
+    def get_current_app_version(self):
+        return self.config.get(self.META_DATA_SECTION, self.APP_VERSION_TITLE)
+    
+    def get_latest_available_app_version(self):
         return self.config.get(self.META_DATA_SECTION, self.APP_LATEST_AVAILABLE_VERSION_TITLE)
         
     def get_phrases(self, start_date: datetime, end_date: datetime, half: str, term: str):
@@ -676,7 +681,7 @@ class InvoiceApp:
             support_buttons_disabled = False
             
         if not self.is_app_latest_version():
-            update_tooltip = f'Update {self.get_latest_available_version()} is available!'
+            update_tooltip = f' Latest update v{self.get_latest_available_app_version()} is available '
             tooltip_disabled = False
         else:
             update_tooltip = None
@@ -835,5 +840,12 @@ class InvoiceApp:
                 # Extract all contents to the specified path
                     zip_ref.extractall(self.parent_directory_path)
                     print(f"Zip file contents extracted to: {self.parent_directory_path}")
+                    
+                window[self.UPDATE_BUTTON].update(disabled=True)
+                window[self.UPDATE_BUTTON].SetTooltip(' No updates available ')
+                
+                self.config.set(self.META_DATA_SECTION, self.APP_VERSION_TITLE, self.get_latest_available_app_version())
+                
+                self.save_config()
                 
         window.close()
