@@ -1,16 +1,19 @@
-import random
 import sys
 import time
+from datetime import datetime, timedelta
+from enum import IntEnum
+import os.path
 from typing import Literal
+
 import PySimpleGUI as sg
 import json
 import re
 import pyperclip
-from datetime import datetime, timedelta
-from enum import IntEnum
-from gmailAPI import GmailAPI
-import os.path
 from configparser import ConfigParser
+import requests
+import random
+
+from gmailAPI import GmailAPI
 
 class PhraseType(IntEnum):
     INVOICE = 0
@@ -28,6 +31,7 @@ class InvoiceApp:
     STARTING_WINDOW_X = 585
     STARTING_WINDOW_Y = 427
     APP_VERSION = 'v0.3.0'
+    APP_URL = f'https://github.com/WolfyCodeK/student-invoice-template-app/raw/main/StudentInvoice-{APP_VERSION.removeprefix("v")}.zip'
 
     # Term Dates
     today = datetime.now()
@@ -111,6 +115,7 @@ class InvoiceApp:
     BODY_BUTTON = 'Body'
     SUBJECT_BUTTON = 'Subject'
     SETTINGS_BUTTON = 'Settings'
+    UPDATE_BUTTON = 'Update'
     
     template_edit_buttons_list = [DELETE_BUTTON, DRAFT_BUTTON, DRAFT_ALL_BUTTON, BODY_BUTTON, SUBJECT_BUTTON, EDIT_BUTTON]
 
@@ -682,6 +687,8 @@ class InvoiceApp:
             if event == self.EXIT_BUTTON or event == sg.WINDOW_CLOSE_ATTEMPTED_EVENT:
                 self.config.set(self.STATE_SECTION, self.CURRENT_TEMPLATE, str(values[self.NAMES_COMBOBOX]))
                 
+                self.save_win_location(window)
+                
                 self.save_config()
                 
                 break
@@ -765,5 +772,28 @@ class InvoiceApp:
                     window = self.get_main_window()
                     
                     self.display_message_box('Settings Saved!', 'qm', window)
+                    
+            if event == self.UPDATE_BUTTON:
+                # Get the absolute path of the current file
+                current_file_path = os.path.abspath(__file__)
+
+                # Navigate one directory back (get the parent directory path)
+                parent_directory_path = os.path.dirname(os.path.dirname(current_file_path))
+                
+                try:
+                    response = requests.get(self.APP_URL)
+                    
+                    with open(parent_directory_path, 'wb') as file:
+                        file.write(response.content)
+
+                except Exception as e:
+                    sg.popup_error(f'Error updating file: {e}')
+                
+                # Create the extraction directory if it doesn't exist
+                os.makedirs(extract_to_directory, exist_ok=True)
+
+                # Extract the contents of the zip file
+                with zipfile.ZipFile(zip_file_path, 'r') as zip_ref:
+                    zip_ref.extractall(extract_to_directory)
                 
         window.close()
