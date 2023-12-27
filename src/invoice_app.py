@@ -158,9 +158,6 @@ class InvoiceApp:
 
         # Navigate two directories back to get the parent directory
         self.parent_directory_path = os.path.dirname(os.path.dirname(self.current_file_path))
-
-        # Navigate two directories back to get the parent directory
-        self.top_level_directory_path = os.path.dirname(os.path.dirname(os.path.dirname(self.current_file_path)))
         
         # Create resources directory if it does not exist
         if not os.path.exists(self.RESOURCE_DIR):
@@ -538,7 +535,7 @@ class InvoiceApp:
         window = sg.Window(self.SETTINGS_BUTTON, layout, element_justification='l', size=(self.SETTINGS_WIDTH, self.SETTINGS_HEIGHT), modal=True, icon=self.MAIN_ICO, keep_on_top=self.KEEP_ON_TOP, location=(self.get_last_win_x() + self.WIN_OFFSET_X, self.get_last_win_y() + self.WIN_OFFSET_Y))
         
         # Make initial window read
-        window.read(timeout=0)
+        window.read(timeout=1)
         
         # Event Loop
         while True:
@@ -624,7 +621,7 @@ class InvoiceApp:
         window = sg.Window(template_title, layout, element_justification='l', size=(self.SELECT_WIDTH, self.SELECT_HEIGHT), modal=True, icon=self.MAIN_ICO, keep_on_top=self.KEEP_ON_TOP, location=(self.get_last_win_x()+ self.WIN_OFFSET_X, self.get_last_win_y() + self.WIN_OFFSET_Y))
         
         # Make initial window read
-        window.read(timeout=0)
+        window.read(timeout=1)
         
         # Event Loop
         while True:
@@ -705,6 +702,7 @@ class InvoiceApp:
 
         layout = [  
                     [
+                        sg.Text(f'Build: v{self.get_current_app_version()}'),
                         sg.Push(),
                         sg.Button(self.UPDATE_BUTTON, font=self.text_font, disabled=tooltip_disabled, tooltip=update_tooltip)
                     ],
@@ -730,7 +728,7 @@ class InvoiceApp:
         window = sg.Window('Invoice Templates', layout, element_justification='l', size=(self.MAIN_WIDTH, self.MAIN_HEIGHT), icon=self.MAIN_ICO, keep_on_top=self.KEEP_ON_TOP, location=(self.get_last_win_x(), self.get_last_win_y()), enable_close_attempted_event=True)
         
         # Make initial window read
-        window.read(timeout=0)
+        window.read(timeout=1)
         
         return window
 
@@ -834,53 +832,45 @@ class InvoiceApp:
                     self.display_message_box('Settings Saved!', 'qm', window)
                     
             if event == self.UPDATE_BUTTON:
-                # Attempt to get response from download url
-                response = requests.get('https://github.com/WolfyCodeK/student-invoice-template-app/raw/main/StudentInvoiceExecutable.zip', stream=True)
-                if response.status_code == 200:
-                    download_content = io.BytesIO(response.content)
-                else:
-                    print(f'Failed to download the file. Status code: {response.status_code}')
-                    return None
+                if self.display_message_box(f'Are you sure you want to update to version v{self.get_latest_available_app_version()}', 'yn', window) == 'Yes':
+                    # Attempt to get response from download url
+                    response = requests.get('https://github.com/WolfyCodeK/student-invoice-template-app/raw/main/StudentInvoiceExecutable.zip', stream=True)
+                    if response.status_code == 200:
+                        download_content = io.BytesIO(response.content)
+                    else:
+                        print(f'Failed to download the file. Status code: {response.status_code}')
+                        return None
+                        
+                    with zipfile.ZipFile(download_content, 'r') as zip_ref:
+                        zip_ref.extractall(self.parent_directory_path)
                     
-                with zipfile.ZipFile(download_content, 'r') as zip_ref:
-                    zip_ref.extractall(self.top_level_directory_path)
-                    extracted_folder_name = zip_ref.filename
-                    print(f"Zip file contents extracted to: {self.top_level_directory_path}")
-                
-                
-                latest_app_name = f'StudentInvoice-{self.get_latest_available_app_version()}'
-                
-                if os.path.exists('credentials.json') and os.path.exists('key.key'):
-                    shutil.move('credentials.json', self.top_level_directory_path + f'\\{latest_app_name}\\lib')
-                    shutil.move('key.key', self.top_level_directory_path + f'\\{latest_app_name}\\lib')
+                    latest_app_name = f'StudentInvoice-{self.get_latest_available_app_version()}'
+                    latest_app_directory_path = self.parent_directory_path + f'\\{latest_app_name}'
+                    
+                    if os.path.exists('credentials.json') and os.path.exists('key.key'):
+                        shutil.move('credentials.json', f'{latest_app_directory_path}\\lib')
+                        shutil.move('key.key', f'{latest_app_directory_path}\\lib')
+                        
+                        with open('error_log.txt', 'w') as file:
+                            file.write('credentials moved')
+                        
+                        if os.path.exists('token.json'):
+                            shutil.move('token.json', f'{latest_app_directory_path}\\lib')
+                            
+                            with open('error_log.txt', 'w') as file:
+                                file.write('token moved started')
 
-                if os.path.exists('token.json'):
-                    shutil.move('token.json', self.top_level_directory_path + f'\\{latest_app_name}\\lib')
-                
-                shutil.move(self.top_level_directory_path + f'\\{latest_app_name}\\lib', self.parent_directory_path)
-                
-                shutil.move(self.top_level_directory_path + f'\\{latest_app_name}\\res', self.parent_directory_path)
+                    if os.path.exists(f'{self.parent_directory_path}\\StudentInvoice-{self.get_current_app_version()}\\templates.json'):
+                        shutil.move(f'{self.parent_directory_path}\\StudentInvoice-{self.get_current_app_version()}\\templates.json', latest_app_directory_path)
+                        
+                        with open('error_log.txt', 'w') as file:
+                            file.write('templates moved')
+                    
+                    # print('dir moving started')
+                    
+                    # subprocess.run(['python', f'{self.parent_directory_path}\\lib\\update_app.py', f'{self.parent_directory_path}\\{latest_app_name}.exe', self.parent_directory_path, latest_app_directory_path, latest_app_name])
+                    subprocess.run(['python', f'{self.parent_directory_path}\\StudentInvoice-{self.get_current_app_version()}\\lib\\launch_executable.py', f'{latest_app_directory_path}\\{latest_app_name}.exe'])
 
-                shutil.move(self.top_level_directory_path + f'\\{latest_app_name}\\charset_normalizer', self.parent_directory_path)
-                
-                shutil.move(self.top_level_directory_path + f'\\{latest_app_name}\\cryptography', self.parent_directory_path)
-                
-                shutil.move(self.top_level_directory_path + f'\\{latest_app_name}\\cryptography-41.0.7.dist-info', self.parent_directory_path)
-                
-                shutil.move(self.top_level_directory_path + f'\\{latest_app_name}\\setuptools-65.5.0.dist-info', self.parent_directory_path)
-                
-                shutil.move(self.top_level_directory_path + f'\\{latest_app_name}\\base_library.zip', self.parent_directory_path)
-
-                dll_files = glob.glob(os.path.join(self.top_level_directory_path + f'\\{latest_app_name}', '*.dll'))
-
-                # Move each .dll file to the parent directory
-                for dll_file in dll_files:
-                    shutil.move(dll_file, self.parent_directory_path)
-            
-                shutil.move(self.top_level_directory_path + f'{latest_app_name}\\{latest_app_name}.exe', self.parent_directory_path)
-                
-                subprocess.run(f'{self.parent_directory_path}\\{latest_app_name}', shell=True)
-                
-                sys.exit()
+                    sys.exit()
                 
         window.close()
