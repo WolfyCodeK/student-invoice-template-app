@@ -35,7 +35,7 @@ class InvoiceApp:
     OUTSIDE_TERM_TIME_MSG = '<OUTSIDE TERM TIME!>'
     STARTING_WINDOW_X = 585
     STARTING_WINDOW_Y = 427
-    APP_VERSION = '0.2.1'
+    APP_VERSION = '0.3.1'
     APP_URL = f'https://github.com/WolfyCodeK/student-invoice-template-app/raw/main/StudentInvoiceExecutable.zip'
 
     # Term Dates
@@ -851,25 +851,28 @@ class InvoiceApp:
                         shutil.move('credentials.json', f'{latest_app_directory_path}\\lib')
                         shutil.move('key.key', f'{latest_app_directory_path}\\lib')
                         
-                        with open('error_log.txt', 'w') as file:
-                            file.write('credentials moved')
+                        with open('error_log.txt', 'a') as file:
+                            file.write('credentials moved\n')
                         
                         if os.path.exists('token.json'):
                             shutil.move('token.json', f'{latest_app_directory_path}\\lib')
                             
-                            with open('error_log.txt', 'w') as file:
-                                file.write('token moved started')
+                            with open('error_log.txt', 'a') as file:
+                                file.write('token moved started\n')
 
                     if os.path.exists(f'{self.parent_directory_path}\\StudentInvoice-{self.get_current_app_version()}\\templates.json'):
                         shutil.move(f'{self.parent_directory_path}\\StudentInvoice-{self.get_current_app_version()}\\templates.json', latest_app_directory_path)
                         
-                        with open('error_log.txt', 'w') as file:
-                            file.write('templates moved')
+                        with open('error_log.txt', 'a') as file:
+                            file.write('templates moved\n')
                     
                     # print('dir moving started')
                     
                     # subprocess.run(['python', f'{self.parent_directory_path}\\lib\\update_app.py', f'{self.parent_directory_path}\\{latest_app_name}.exe', self.parent_directory_path, latest_app_directory_path, latest_app_name])
                     subprocess.run(['python', f'{self.parent_directory_path}\\StudentInvoice-{self.get_current_app_version()}\\lib\\launch_executable.py', f'{latest_app_directory_path}\\{latest_app_name}.exe'])
+                    
+                    with open('error_log.txt', 'a') as file:
+                        file.write('subprocess run\n')
 
                     sys.exit()
                 
