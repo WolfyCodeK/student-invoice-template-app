@@ -1,4 +1,6 @@
 import io
+import shutil
+import subprocess
 import sys
 import time
 from datetime import datetime, timedelta
@@ -32,7 +34,7 @@ class InvoiceApp:
     OUTSIDE_TERM_TIME_MSG = '<OUTSIDE TERM TIME!>'
     STARTING_WINDOW_X = 585
     STARTING_WINDOW_Y = 427
-    DOWNLOADED_APP_VERSION = '0.2.0'
+    APP_VERSION = '0.2.1'
     APP_URL = f'https://github.com/WolfyCodeK/student-invoice-template-app/raw/main/StudentInvoiceExecutable.zip'
 
     # Term Dates
@@ -153,8 +155,11 @@ class InvoiceApp:
         # Get the absolute path of this file
         self.current_file_path = os.path.abspath(__file__)
 
-        # Navigate one directory back to get the parent directory
+        # Navigate two directories back to get the parent directory
         self.parent_directory_path = os.path.dirname(os.path.dirname(self.current_file_path))
+
+        # Navigate two directories back to get the parent directory
+        self.top_level_directory_path = os.path.dirname(os.path.dirname(os.path.dirname(self.current_file_path)))
         
         # Create resources directory if it does not exist
         if not os.path.exists(self.RESOURCE_DIR):
@@ -179,7 +184,7 @@ class InvoiceApp:
                 f.write(f'{self.LAST_WINDOW_Y} = {self.STARTING_WINDOW_Y}\n')
                 
                 f.write(f'\n[{self.META_DATA_SECTION}]\n')
-                f.write(f'{self.APP_VERSION_TITLE} = {self.DOWNLOADED_APP_VERSION}\n')
+                f.write(f'{self.APP_VERSION_TITLE} = {self.APP_VERSION}\n')
                 f.write(f'{self.APP_LATEST_AVAILABLE_VERSION_TITLE} = \n')
                 f.close()
             
@@ -298,8 +303,8 @@ class InvoiceApp:
             if match is not None:
                 latest_available_version = match.group(1)
                 
-        except Exception as _:
-            self.display_message_box('There was a problem fetching the latest update. Try checking your internet connection.', 'er')
+        except Exception as e:
+            self.display_message_box('There was a problem fetching the latest update. Try checking your internet connection.' + e, 'er')
             
         return latest_available_version
     
@@ -469,7 +474,7 @@ class InvoiceApp:
             
             return choice
         elif box_type == 'er':
-            sg.popup_quick_message(title, font=self.text_font, title='', icon=self.BLANK_ICO, keep_on_top=self.KEEP_ON_TOP, background_color="Red", text_color="White", location=(self.get_last_win_x() + self.WIN_OFFSET_X, self.get_last_win_y() + self.WIN_OFFSET_Y)) 
+            sg.popup(title, font=self.text_font, title='', icon=self.BLANK_ICO, keep_on_top=self.KEEP_ON_TOP, background_color="Red", text_color="White", location=(self.get_last_win_x() + self.WIN_OFFSET_X, self.get_last_win_y() + self.WIN_OFFSET_Y)) 
             
             return None
         
@@ -837,9 +842,22 @@ class InvoiceApp:
                     return None
                     
                 with zipfile.ZipFile(download_content, 'r') as zip_ref:
-                # Extract all contents to the specified path
-                    zip_ref.extractall(self.parent_directory_path)
-                    print(f"Zip file contents extracted to: {self.parent_directory_path}")
+                    zip_ref.extractall(self.top_level_directory_path)
+                    extracted_folder_name = zip_ref.filename
+                    print(f"Zip file contents extracted to: {self.top_level_directory_path}")
+                
+                
+                latest_app_name = f'StudentInvoice-{self.get_latest_available_app_version()}'
+                
+                shutil.move(self.top_level_directory_path + f'\\{latest_app_name}\\_include', self.parent_directory_path)
+                
+                shutil.move(self.top_level_directory_path + f'\\{latest_app_name}\\res', self.parent_directory_path)
+
+                shutil.move(self.top_level_directory_path + f'{latest_app_name}\\{latest_app_name}.exe', self.parent_directory_path)
+                
+                subprocess.run(f'{self.parent_directory_path}\\{latest_app_name}', shell=True)
+                
+                sys.exit()
                     
                 window[self.UPDATE_BUTTON].update(disabled=True)
                 window[self.UPDATE_BUTTON].SetTooltip(' No updates available ')
