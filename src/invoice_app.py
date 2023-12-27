@@ -35,7 +35,7 @@ class InvoiceApp:
     OUTSIDE_TERM_TIME_MSG = '<OUTSIDE TERM TIME!>'
     STARTING_WINDOW_X = 585
     STARTING_WINDOW_Y = 427
-    APP_VERSION = '0.3.1'
+    APP_VERSION = '0.4.0'
     APP_URL = f'https://github.com/WolfyCodeK/student-invoice-template-app/raw/main/StudentInvoiceExecutable.zip'
 
     # Term Dates
@@ -156,8 +156,10 @@ class InvoiceApp:
         # Get the absolute path of this file
         self.current_file_path = os.path.abspath(__file__)
 
+        self.parent_path = os.path.dirname(self.current_file_path)
+
         # Navigate two directories back to get the parent directory
-        self.parent_directory_path = os.path.dirname(os.path.dirname(self.current_file_path))
+        self.top_level_path = os.path.dirname(os.path.dirname(self.current_file_path))
         
         # Create resources directory if it does not exist
         if not os.path.exists(self.RESOURCE_DIR):
@@ -842,37 +844,37 @@ class InvoiceApp:
                         return None
                         
                     with zipfile.ZipFile(download_content, 'r') as zip_ref:
-                        zip_ref.extractall(self.parent_directory_path)
+                        zip_ref.extractall(self.top_level_path)
                     
                     latest_app_name = f'StudentInvoice-{self.get_latest_available_app_version()}'
-                    latest_app_directory_path = self.parent_directory_path + f'\\{latest_app_name}'
+                    latest_app_directory_path = self.top_level_path + f'\\{latest_app_name}'
                     
-                    if os.path.exists('credentials.json') and os.path.exists('key.key'):
-                        shutil.move('credentials.json', f'{latest_app_directory_path}\\lib')
-                        shutil.move('key.key', f'{latest_app_directory_path}\\lib')
+                    if os.path.exists(f'{self.parent_path}\\lib\\credentials.json') and os.path.exists(f'{self.parent_path}\\lib\\key.key'):
+                        shutil.copy(
+                            f'{self.parent_path}\\lib\\credentials.json',
+                            f'{latest_app_directory_path}\\lib'
+                        )
                         
-                        with open('error_log.txt', 'a') as file:
-                            file.write('credentials moved\n')
+                        shutil.copy(
+                            f'{self.parent_path}\\lib\\key.key',
+                            f'{latest_app_directory_path}\\lib'
+                        )
                         
-                        if os.path.exists('token.json'):
-                            shutil.move('token.json', f'{latest_app_directory_path}\\lib')
-                            
-                            with open('error_log.txt', 'a') as file:
-                                file.write('token moved started\n')
+                        if os.path.exists(f'{self.parent_path}\\lib\\token.json'):
+                            shutil.copy(
+                                f'{self.parent_path}\\lib\\token.json',
+                                f'{latest_app_directory_path}\\lib'
+                            )
 
-                    if os.path.exists(f'{self.parent_directory_path}\\StudentInvoice-{self.get_current_app_version()}\\templates.json'):
-                        shutil.move(f'{self.parent_directory_path}\\StudentInvoice-{self.get_current_app_version()}\\templates.json', latest_app_directory_path)
-                        
-                        with open('error_log.txt', 'a') as file:
-                            file.write('templates moved\n')
+                    if os.path.exists(f'{self.parent_path}\\templates.json'):
+                        shutil.copy(
+                            f'{self.parent_path}\\templates.json',
+                            latest_app_directory_path
+                        )
                     
-                    # print('dir moving started')
+                    os.chdir(latest_app_directory_path)
                     
-                    # subprocess.run(['python', f'{self.parent_directory_path}\\lib\\update_app.py', f'{self.parent_directory_path}\\{latest_app_name}.exe', self.parent_directory_path, latest_app_directory_path, latest_app_name])
-                    subprocess.run(['python', f'{self.parent_directory_path}\\StudentInvoice-{self.get_current_app_version()}\\lib\\launch_executable.py', f'{latest_app_directory_path}\\{latest_app_name}.exe'])
-                    
-                    with open('error_log.txt', 'a') as file:
-                        file.write('subprocess run\n')
+                    subprocess.run([f'{self.parent_path}\\lib\\launch_executable.bat', f'{latest_app_directory_path}\\{latest_app_name}.exe'])
 
                     sys.exit()
                 

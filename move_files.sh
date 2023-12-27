@@ -21,6 +21,13 @@ mv *.pyd lib/
 # Move all files ending in .py into the 'lib' folder
 mv *.py lib/
 
+# Move all files ending in .bat into the 'lib' folder
+mv *.bat lib/
+
+# Move credentials and key into the 'lib' folder
+mv credentials.json lib/
+mv key.key lib/
+
 # Move all files ending in .dll unless they start with 'python3' into the 'lib' folder
 shopt -s extglob
 mv !(python3*).dll lib/
