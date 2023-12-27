@@ -1,4 +1,3 @@
-import glob
 import io
 import shutil
 import subprocess
@@ -35,7 +34,6 @@ class InvoiceApp:
     OUTSIDE_TERM_TIME_MSG = '<OUTSIDE TERM TIME!>'
     STARTING_WINDOW_X = 585
     STARTING_WINDOW_Y = 427
-    APP_VERSION = '0.4.0'
     APP_URL = f'https://github.com/WolfyCodeK/student-invoice-template-app/raw/main/StudentInvoiceExecutable.zip'
 
     # Term Dates
@@ -161,6 +159,19 @@ class InvoiceApp:
         # Navigate two directories back to get the parent directory
         self.top_level_path = os.path.dirname(os.path.dirname(self.current_file_path))
         
+        # Get app version
+        file_path = f'{self.parent_path}\\lib\\app_version'
+
+        try:
+            # Read the content and remove leading/trailing whitespace
+            with open(file_path, 'r') as f:
+                app_version = f.read().strip()  
+                f.close()
+
+        except FileNotFoundError:
+            InvoiceApp.log_message('ERROR', f'File "{file_path}" not found')
+            sys.exit()
+        
         # Create resources directory if it does not exist
         if not os.path.exists(self.RESOURCE_DIR):
             os.makedirs(self.RESOURCE_DIR)
@@ -184,7 +195,7 @@ class InvoiceApp:
                 f.write(f'{self.LAST_WINDOW_Y} = {self.STARTING_WINDOW_Y}\n')
                 
                 f.write(f'\n[{self.META_DATA_SECTION}]\n')
-                f.write(f'{self.APP_VERSION_TITLE} = {self.APP_VERSION}\n')
+                f.write(f'{self.APP_VERSION_TITLE} = {app_version}\n')
                 f.write(f'{self.APP_LATEST_AVAILABLE_VERSION_TITLE} = \n')
                 f.close()
             
@@ -212,6 +223,25 @@ class InvoiceApp:
         except ValueError:
             return False
     
+    @staticmethod
+    def log_message(log_level: Literal['ERROR', 'WARNING', 'INFO'], log_msg: str):
+        with open('error_log.txt', 'a') as f:
+            f.write(f'{datetime.now().strftime("%d-%m-%Y %H:%M:%S")}: [{log_level}] - {log_msg}\n')
+            f.close()
+            
+    @staticmethod
+    def is_newer_version_available(current_version, new_version):
+        v1_parts = list(map(int, current_version.split('.')))
+        v2_parts = list(map(int, new_version.split('.')))
+
+        for i in range(len(v1_parts)):
+            if v2_parts[i] > v1_parts[i]:
+                return True
+            elif v2_parts[i] < v1_parts[i]:
+                return False
+
+        return False
+    
     def run(self):
         repaired = False
         
@@ -234,7 +264,7 @@ class InvoiceApp:
                     needs_repairing = True
             
             if needs_repairing:
-                if self.display_message_box("It seems that the information in your templates might be outdated or damaged. To fix this issue, would you like to try repairing the data?", 'yn') == 'Yes':
+                if self.display_message_box("It seems that the information in your templates might be outdated or damaged. To fix this issue, would you like to try repairing the data?", 'yn', None) == 'Yes':
                     
                     for name in name_list:
                         new_json_data[name] = {}
@@ -284,7 +314,7 @@ class InvoiceApp:
                     repaired = True
                         
                 else:
-                    self.display_message_box("Cannot proceed with invalid template data\nApp is terminating!", 'er')
+                    self.display_message_box("Cannot proceed with invalid template data\nApp is terminating!", 'er', None)
                         
                     time.sleep(3)
                     sys.exit()
@@ -304,12 +334,9 @@ class InvoiceApp:
                 latest_available_version = match.group(1)
                 
         except Exception as e:
-            self.display_message_box('There was a problem fetching the latest update. Try checking your internet connection.' + e, 'er')
+            self.display_message_box('There was a problem fetching the latest update. Try checking your internet connection.' + e, 'er', None)
             
         return latest_available_version
-    
-    def is_app_latest_version(self):
-        return self.get_current_app_version() == self.get_latest_available_app_version()
 
     def get_theme(self):
         return self.config.get(self.PREFERENCES_SECTION, self.THEME)
@@ -445,7 +472,7 @@ class InvoiceApp:
         
         return f">>>>> WARNING: OUTSIDE TERM TIME\n>>>>> INFORMATION CANNOT BE APPLIED\n\nHi {name},\n\nHere is my invoice for {eMsg}'s {eMsg} lessons {eMsg}.\n--------\n{eMsg} this {eMsg} from {eMsg}.\n\n{eMsg} x £{eMsg} = £{eMsg}\n\nThank you\n--------\n\nKind regards\nRobert"
 
-    def display_message_box(self, title: str, box_type: Literal['yn', 'qm', 'pu', 'er'], window: sg.Window = None):
+    def display_message_box(self, title: str, box_type: Literal['yn', 'qm', 'pu', 'er'], window: sg.Window, close_duration: int = 2):
         """Display a message to the user inside a box.
 
         Args:
@@ -465,7 +492,7 @@ class InvoiceApp:
             return choice
         
         elif box_type == 'qm':
-            sg.popup_quick_message(title, font=self.text_font, title='', icon=self.BLANK_ICO, keep_on_top=self.KEEP_ON_TOP, background_color="Black", text_color="White", location=(self.get_last_win_x() + self.WIN_OFFSET_X, self.get_last_win_y() + self.WIN_OFFSET_Y)) 
+            sg.popup_quick_message(title, font=self.text_font, title='', icon=self.BLANK_ICO, keep_on_top=self.KEEP_ON_TOP, background_color="Black", text_color="White", location=(self.get_last_win_x() + self.WIN_OFFSET_X, self.get_last_win_y() + self.WIN_OFFSET_Y), auto_close_duration=close_duration) 
             
             return None
         
@@ -685,7 +712,7 @@ class InvoiceApp:
         else:
             support_buttons_disabled = False
             
-        if not self.is_app_latest_version():
+        if InvoiceApp.is_newer_version_available(self.get_current_app_version(), self.get_latest_available_app_version()):
             update_tooltip = f' Latest update v{self.get_latest_available_app_version()} is available '
             tooltip_disabled = False
         else:
@@ -835,13 +862,16 @@ class InvoiceApp:
                     
             if event == self.UPDATE_BUTTON:
                 if self.display_message_box(f'Are you sure you want to update to version v{self.get_latest_available_app_version()}', 'yn', window) == 'Yes':
+                    self.display_message_box('Updating...', 'qm', window, 5)
+                    
                     # Attempt to get response from download url
-                    response = requests.get('https://github.com/WolfyCodeK/student-invoice-template-app/raw/main/StudentInvoiceExecutable.zip', stream=True)
+                    response = requests.get(self.APP_URL, stream=True)
+                    
                     if response.status_code == 200:
                         download_content = io.BytesIO(response.content)
                     else:
-                        print(f'Failed to download the file. Status code: {response.status_code}')
-                        return None
+                        self.log_message('ERROR', f'Failed to download the file. Status code: {response.status_code}')
+                        self.display_message_box('Failed to update!', 'er', window)
                         
                     with zipfile.ZipFile(download_content, 'r') as zip_ref:
                         zip_ref.extractall(self.top_level_path)
@@ -871,10 +901,14 @@ class InvoiceApp:
                             f'{self.parent_path}\\templates.json',
                             latest_app_directory_path
                         )
-                    
+                        
+                    # Set directory to new app version
                     os.chdir(latest_app_directory_path)
                     
-                    subprocess.run([f'{self.parent_path}\\lib\\launch_executable.bat', f'{latest_app_directory_path}\\{latest_app_name}.exe'])
+                    self.log_message('INFO', f'Launching {latest_app_name}.exe')
+                    
+                    # Launch new app version
+                    subprocess.run([f'{self.parent_path}\\lib\\launch_executable.bat', f'{latest_app_directory_path}\\{latest_app_name}.exe', self.get_current_app_version()])
 
                     sys.exit()
                 
