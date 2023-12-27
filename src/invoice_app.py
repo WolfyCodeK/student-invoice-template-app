@@ -1,3 +1,4 @@
+import glob
 import io
 import shutil
 import subprocess
@@ -849,21 +850,37 @@ class InvoiceApp:
                 
                 latest_app_name = f'StudentInvoice-{self.get_latest_available_app_version()}'
                 
-                shutil.move(self.top_level_directory_path + f'\\{latest_app_name}\\_include', self.parent_directory_path)
+                if os.path.exists('credentials.json') and os.path.exists('key.key'):
+                    shutil.move('credentials.json', self.top_level_directory_path + f'\\{latest_app_name}\\lib')
+                    shutil.move('key.key', self.top_level_directory_path + f'\\{latest_app_name}\\lib')
+
+                if os.path.exists('token.json'):
+                    shutil.move('token.json', self.top_level_directory_path + f'\\{latest_app_name}\\lib')
+                
+                shutil.move(self.top_level_directory_path + f'\\{latest_app_name}\\lib', self.parent_directory_path)
                 
                 shutil.move(self.top_level_directory_path + f'\\{latest_app_name}\\res', self.parent_directory_path)
 
+                shutil.move(self.top_level_directory_path + f'\\{latest_app_name}\\charset_normalizer', self.parent_directory_path)
+                
+                shutil.move(self.top_level_directory_path + f'\\{latest_app_name}\\cryptography', self.parent_directory_path)
+                
+                shutil.move(self.top_level_directory_path + f'\\{latest_app_name}\\cryptography-41.0.7.dist-info', self.parent_directory_path)
+                
+                shutil.move(self.top_level_directory_path + f'\\{latest_app_name}\\setuptools-65.5.0.dist-info', self.parent_directory_path)
+                
+                shutil.move(self.top_level_directory_path + f'\\{latest_app_name}\\base_library.zip', self.parent_directory_path)
+
+                dll_files = glob.glob(os.path.join(self.top_level_directory_path + f'\\{latest_app_name}', '*.dll'))
+
+                # Move each .dll file to the parent directory
+                for dll_file in dll_files:
+                    shutil.move(dll_file, self.parent_directory_path)
+            
                 shutil.move(self.top_level_directory_path + f'{latest_app_name}\\{latest_app_name}.exe', self.parent_directory_path)
                 
                 subprocess.run(f'{self.parent_directory_path}\\{latest_app_name}', shell=True)
                 
                 sys.exit()
-                    
-                window[self.UPDATE_BUTTON].update(disabled=True)
-                window[self.UPDATE_BUTTON].SetTooltip(' No updates available ')
-                
-                self.config.set(self.META_DATA_SECTION, self.APP_VERSION_TITLE, self.get_latest_available_app_version())
-                
-                self.save_config()
                 
         window.close()
