@@ -35,8 +35,8 @@ class InvoiceApp:
     OUTSIDE_TERM_TIME_MSG = '<OUTSIDE TERM TIME!>'
     STARTING_WINDOW_X = 585
     STARTING_WINDOW_Y = 427
-    APP_URL = 'https://github.com/WolfyCodeK/student-invoice-template-app/raw/test-branch/StudentInvoiceExecutable.zip'
-    APP_VERSION_URL = 'https://raw.githubusercontent.com/WolfyCodeK/student-invoice-template-app/test-branch/app_version'
+    APP_URL = 'https://github.com/WolfyCodeK/student-invoice-template-app/raw/main/StudentInvoiceExecutable.zip'
+    APP_VERSION_URL = 'https://raw.githubusercontent.com/WolfyCodeK/student-invoice-template-app/main/app_version'
 
     # Term Dates
     today = datetime.now()
