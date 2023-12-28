@@ -1,5 +1,6 @@
 import io
 import shutil
+import stat
 import subprocess
 import sys
 import time
@@ -34,7 +35,8 @@ class InvoiceApp:
     OUTSIDE_TERM_TIME_MSG = '<OUTSIDE TERM TIME!>'
     STARTING_WINDOW_X = 585
     STARTING_WINDOW_Y = 427
-    APP_URL = f'https://github.com/WolfyCodeK/student-invoice-template-app/raw/main/StudentInvoiceExecutable.zip'
+    APP_URL = 'https://github.com/WolfyCodeK/student-invoice-template-app/raw/test-branch/StudentInvoiceExecutable.zip'
+    APP_VERSION_URL = 'https://raw.githubusercontent.com/WolfyCodeK/student-invoice-template-app/test-branch/app_version'
 
     # Term Dates
     today = datetime.now()
@@ -156,8 +158,8 @@ class InvoiceApp:
 
         self.parent_path = os.path.dirname(self.current_file_path)
 
-        # Navigate two directories back to get the parent directory
-        self.top_level_path = os.path.dirname(os.path.dirname(self.current_file_path))
+        # Navigate two directories back to get the top level path
+        self.top_level_path = os.path.dirname(self.parent_path)
         
         # Get app version
         file_path = f'{self.parent_path}\\lib\\app_version'
@@ -325,13 +327,10 @@ class InvoiceApp:
         latest_available_version = self.get_current_app_version()
         
         try:
-            response = requests.get('https://raw.githubusercontent.com/WolfyCodeK/student-invoice-template-app/main/README.md')
-            
-            pattern = r'\[StudentInvoice-(\d+\.\d+\.\d+)\.zip\]'
-            match = re.search(pattern, response.content.decode())
-            
-            if match is not None:
-                latest_available_version = match.group(1)
+            response = requests.get(self.APP_VERSION_URL)
+                
+            latest_available_version = response.content.decode().replace('\n', '')
+            InvoiceApp.log_message('INFO', f'Latest version tag fetched from github -> {latest_available_version}')
                 
         except Exception as e:
             self.display_message_box('There was a problem fetching the latest update. Try checking your internet connection.' + e, 'er', None)
@@ -902,13 +901,13 @@ class InvoiceApp:
                             latest_app_directory_path
                         )
                         
+                    # Make this directory deletable for when new app is installed
+                    os.chmod(self.parent_path, stat.S_IWRITE)      
+
                     # Set directory to new app version
                     os.chdir(latest_app_directory_path)
                     
                     self.log_message('INFO', f'Launching {latest_app_name}.exe')
-                    
-                    InvoiceApp.log_message('INFO', f'New executable path -> {latest_app_directory_path}\\{latest_app_name}.exe')
-                    InvoiceApp.log_message('INFO', f'Current app version -> {self.get_current_app_version()}')
                     
                     # Launch new app version
                     subprocess.run([f'{self.parent_path}\\lib\\launch_executable.bat', f'{latest_app_directory_path}\\{latest_app_name}.exe', self.get_current_app_version()])
