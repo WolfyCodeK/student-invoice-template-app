@@ -6,6 +6,5 @@ if "%~1" == "" (
     exit /b
 )
 
-REM Launch the Python script with arguments
-shift
+REM Launch the Python script with arguments excluding the first one (executable path)
 python "%~1" %*
