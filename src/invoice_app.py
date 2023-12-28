@@ -907,6 +907,9 @@ class InvoiceApp:
                     
                     self.log_message('INFO', f'Launching {latest_app_name}.exe')
                     
+                    InvoiceApp.log_message('INFO', f'New executable path -> {latest_app_directory_path}\\{latest_app_name}.exe')
+                    InvoiceApp.log_message('INFO', f'Current app version -> {self.get_current_app_version()}')
+                    
                     # Launch new app version
                     subprocess.run([f'{self.parent_path}\\lib\\launch_executable.bat', f'{latest_app_directory_path}\\{latest_app_name}.exe', self.get_current_app_version()])
 
