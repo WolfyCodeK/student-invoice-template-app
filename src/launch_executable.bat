@@ -7,4 +7,4 @@ if "%~1" == "" (
 )
 
 REM Launch the Python script with arguments excluding the first one (executable path)
-python "%~1" %*
+start "" "%~1" %*

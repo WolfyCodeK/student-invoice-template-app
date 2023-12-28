@@ -8,8 +8,6 @@ from ctypes import windll
 if __name__ == '__main__':
     windll.shcore.SetProcessDpiAwareness(1)
 
-    
-
     # Delete previous version if app has just been updated
     if len(sys.argv) > 1:
         version = str(sys.argv[1])
@@ -35,7 +33,7 @@ if __name__ == '__main__':
                     f.close()
     else:
         with open('error_log.txt', 'a') as f:
-            f.write(f'{datetime.now().strftime("%d-%m-%Y %H:%M:%S")}: [INFO] - No args found\n')
+            f.write(f'{datetime.now().strftime("%d-%m-%Y %H:%M:%S")}: [INFO] - App manually launched by user.\n')
             f.close()
 
     app = InvoiceApp()  
