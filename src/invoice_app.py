@@ -222,7 +222,7 @@ class InvoiceApp:
         self.gmail_API = GmailAPI()
         
     @staticmethod
-    def isFloat(value):
+    def is_float(value):
         try:
             float(value)
             return True
@@ -283,7 +283,7 @@ class InvoiceApp:
                             # Cost
                             if name_data.get(self.COST_INPUT) == None:
                                 for info in name_data:
-                                    if InvoiceApp.isFloat(name_data[info]):
+                                    if InvoiceApp.is_float(name_data[info]):
                                         new_json_data[name][self.COST_INPUT] = json_data[name][info]  
                             else:
                                 new_json_data[name][self.COST_INPUT] = json_data[name][self.COST_INPUT]
