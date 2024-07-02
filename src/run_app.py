@@ -1,4 +1,3 @@
-import ctypes
 from datetime import datetime
 import os
 import shutil
@@ -28,18 +27,12 @@ if __name__ == '__main__':
                 with open('error_log.txt', 'a') as f:
                     f.write(f'{datetime.now().strftime("%d-%m-%Y %H:%M:%S")}: [INFO] - Deleting directory -> {old_app_path}\n')
                     f.close()
-                    
-                # if ctypes.windll.shell32.IsUserAnAdmin() != 0:
                 
                 with open('error_log.txt', 'a') as f:
                     f.write(f'{datetime.now().strftime("%d-%m-%Y %H:%M:%S")}: [INFO] - Path: {old_app_path} -> Permissions -> {os.stat(old_app_path)}\n')
                     f.close()
                 
                 shutil.rmtree(old_app_path)
-                # else:
-                #     with open('error_log.txt', 'a') as f:
-                #         f.write(f'{datetime.now().strftime("%d-%m-%Y %H:%M:%S")}: [ERROR] - Admin privileges needed to remove previous app version\n')
-                #         f.close()
                 
             except OSError as e:
                 with open('error_log.txt', 'a') as f:

@@ -3,6 +3,7 @@ templates.json
 token.json
 __pycache__/
 todo.txt
+error_log.txt
 output
 credentials.json
 env

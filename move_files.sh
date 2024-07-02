@@ -35,6 +35,9 @@ mv *.ico res/
 # Move app version file to 'lib' folder
 mv app_version lib/
 
+# Move the theme list to 'lib' folder
+mv theme_list.txt lib/
+
 # Move all files ending in .dll unless they start with 'python3' into the 'lib' folder
 shopt -s extglob
 mv !(python3*).dll lib/
