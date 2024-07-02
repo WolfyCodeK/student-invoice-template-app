@@ -59,7 +59,7 @@ class InvoiceApp:
     spring_second_half  = [datetime(2024, 2, 19), datetime(2024, 3, 30), '2nd', 'spring']
 
     summer_first_half = [datetime(2024, 4, 15), datetime(2024, 5, 25), '1st', 'summer']
-    summer_second_half = [datetime(2024, 5, 3), datetime(2024, 6, 24), '2nd', 'summer']
+    summer_second_half = [datetime(2024, 6, 3), datetime(2024, 7, 24), '2nd', 'summer']
 
     term_list = [autumn_first_half, autumn_second_half, spring_first_half, spring_second_half, summer_first_half, summer_second_half]
 
