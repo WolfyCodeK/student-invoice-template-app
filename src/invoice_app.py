@@ -27,7 +27,7 @@ class PhraseType(IntEnum):
 
 class InvoiceApp:
     # Get theme List
-    with open('theme_list.txt', 'r') as file:
+    with open('lib\\theme_list.txt', 'r') as file:
         content = file.read()
         
     theme_list = content.split()

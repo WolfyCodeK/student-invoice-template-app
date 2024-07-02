@@ -12,8 +12,9 @@ mv tcl lib/
 mv tcl8 lib/
 mv tk lib/
 mv certifi lib/
-mv google_api_core-1.34.0.dist-info lib/
-mv google_api_python_client-1.8.0.dist-info lib/
+mv google_api_core-*.dist-info lib/
+mv google_api_python_client-*.dist-info lib/
+mv googleapiclient lib/
 mv httplib2 lib/
 
 # Move files ending with .pyd into the 'lib' folder
