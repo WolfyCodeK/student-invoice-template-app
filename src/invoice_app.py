@@ -26,13 +26,6 @@ class PhraseType(IntEnum):
     DATES = 2
 
 class InvoiceApp:
-    # Get theme List
-    with open('lib\\theme_list.txt', 'r') as file:
-        content = file.read()
-        
-    theme_list = content.split()
-    print(theme_list)
-
     # Default values
     DEFAULT_THEME = 'LightGreen2'
     KEEP_ON_TOP = True
@@ -167,6 +160,12 @@ class InvoiceApp:
         
         # Get app version
         app_version_path = f'{self.parent_path}\\lib\\app_version'
+        
+        # Get theme List
+        with open(f'{self.parent_path}\\lib\\theme_list.txt', 'r') as file:
+            content = file.read()
+        
+        self.theme_list = content.split()
 
         try:
             # Read the content and remove leading/trailing whitespace
@@ -736,7 +735,7 @@ class InvoiceApp:
                     [
                         sg.Text(f'Build: v{self.get_current_app_version()}'),
                         sg.Push(),
-                        sg.Button(self.UPDATE_BUTTON, font=self.text_font, disabled=tooltip_disabled, tooltip=update_tooltip)
+                        # sg.Button(self.UPDATE_BUTTON, font=self.text_font, disabled=tooltip_disabled, tooltip=update_tooltip)
                     ],
                     [
                         [
