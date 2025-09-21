@@ -45,14 +45,14 @@ class InvoiceApp:
     # day = int(sg.popup_get_text('DAY', size= 10, keep_on_top=KEEP_ON_TOP))
     # currentDate = datetime(year, month, day)
 
-    autumn_first_half = [datetime(2023, 9, 4), datetime(2023, 10, 21), '1st', 'autumn']
-    autumn_second_half = [datetime(2023, 10, 30), datetime(2023, 12, 23), '2nd', 'autumn']
+    autumn_first_half = [datetime(2025, 9, 1), datetime(2025, 10, 25), '1st', 'autumn']
+    autumn_second_half = [datetime(2025, 11, 3), datetime(2025, 12, 20), '2nd', 'autumn']
 
-    spring_first_half = [datetime(2024, 1, 8), datetime(2024, 2, 10), '1st', 'spring']
-    spring_second_half  = [datetime(2024, 2, 19), datetime(2024, 3, 30), '2nd', 'spring']
+    spring_first_half = [datetime(2026, 1, 5), datetime(2026, 2, 14), '1st', 'spring']
+    spring_second_half  = [datetime(2026, 2, 23), datetime(2026, 3, 28), '2nd', 'spring']
 
-    summer_first_half = [datetime(2024, 4, 15), datetime(2024, 5, 25), '1st', 'summer']
-    summer_second_half = [datetime(2024, 6, 3), datetime(2024, 7, 24), '2nd', 'summer']
+    summer_first_half = [datetime(2026, 4, 13), datetime(2026, 5, 23), '1st', 'summer']
+    summer_second_half = [datetime(2026, 6, 1), datetime(2026, 7, 18), '2nd', 'summer']
 
     term_list = [autumn_first_half, autumn_second_half, spring_first_half, spring_second_half, summer_first_half, summer_second_half]
 
