@@ -1,6 +1,9 @@
 cryptography==41.0.7
-google_api_python_client
-google_auth_oauthlib
+google_api_python_client==2.182.0
+google_auth_oauthlib==1.2.2
+# SWITCH TO THESE IF TOP TWO ARE NOT WORKING
+# google_api_python_client==2.182.0
+# google_auth_oauthlib==1.2.2
 protobuf==4.25.1
 pyperclip==1.8.2
 PySimpleGUI==4.60.5

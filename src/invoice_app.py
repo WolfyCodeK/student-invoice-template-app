@@ -192,7 +192,7 @@ class InvoiceApp:
             with open(self.CONFIG_PATH, 'w') as f:
                 f.write(f'[{self.PREFERENCES_SECTION}]\n')
                 f.write(f'{self.THEME} = ' + self.DEFAULT_THEME + '\n')
-                f.write(f'{self.EMAIL_MODE} = {self.CLIPBOARD}\n')
+                f.write(f'{self.EMAIL_MODE} = {self.AUTO_DRAFT}\n')
             
                 f.write(f'\n[{self.STATE_SECTION}]\n')
                 f.write(f'{self.CURRENT_TEMPLATE} = \n')

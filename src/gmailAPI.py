@@ -105,7 +105,7 @@ class GmailAPI():
 
         try:
             # create gmail api client
-            service = build('gmail', 'v1', credentials=creds)
+            service = build('gmail', 'v1', credentials=creds, static_discovery=False)
 
             message = EmailMessage()
 
